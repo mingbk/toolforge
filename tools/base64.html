@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 & URL 编解码 - ToolForge</title>
+<meta name="description" content="在线Base64编码解码、URL编码解码工具。支持中文和特殊字符，一键复制。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="timestamp.html">时间戳</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html" class="active">编码</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">随机</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/tools/base64.html">EN</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🔐 Base64 & URL 编解码</h1>
+    <p>Base64编码解码和URL编码解码。支持中文、emoji 和特殊字符。<br><a href="../guide/base64.html" style="font-size:0.85rem;color:var(--text-dim)">📖 使用教程 →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="广告位 · 工具页顶部"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('base64-encode')">Base64 编码</button>
+    <button class="tab-btn" onclick="switchTab('base64-decode')">Base64 解码</button>
+    <button class="tab-btn" onclick="switchTab('url-encode')">URL 编码</button>
+    <button class="tab-btn" onclick="switchTab('url-decode')">URL 解码</button>
+  </div>
+
+  <div class="field" id="input-area">
+    <div class="label-row">
+      <label id="input-label">输入文本</label>
+      <button class="btn btn-sm" onclick="process()" id="action-btn">🔀 编码</button>
+    </div>
+    <textarea id="text-input" placeholder="输入要编码的文本..."></textarea>
+  </div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>输出</label>
+      <button class="btn btn-sm" onclick="copyOutput()">📋 复制结果</button>
+    </div>
+    <textarea id="text-output" readonly placeholder="结果将显示在这里"></textarea>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="广告位 · 工具页底部"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — 8 款开发者工具，全部本地运算，数据不出浏览器。</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · 为效率而生</p>
+</footer>
+
+<script src="../js/common.js"></script>
+<script>
+let currentTab = 'base64-encode';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+  const labels = {
+    'base64-encode': ['输入文本', '🔀 编码'],
+    'base64-decode': ['输入 Base64 字符串', '🔓 解码'],
+    'url-encode': ['输入文本', '🔀 编码'],
+    'url-decode': ['输入 URL 编码字符串', '🔓 解码'],
+  };
+  document.getElementById('input-label').textContent = labels[tab][0];
+  document.getElementById('action-btn').textContent = labels[tab][1];
+  document.getElementById('text-input').placeholder = labels[tab][0] + '...';
+  document.getElementById('text-output').value = '';
+  document.getElementById('text-input').value = '';
+}
+
+function process() {
+  const input = document.getElementById('text-input').value;
+  if (!input) return;
+
+  let output;
+  try {
+    switch(currentTab) {
+      case 'base64-encode':
+        output = btoa(unescape(encodeURIComponent(input)));
+        break;
+      case 'base64-decode':
+        output = decodeURIComponent(escape(atob(input)));
+        break;
+      case 'url-encode':
+        output = encodeURIComponent(input);
+        break;
+      case 'url-decode':
+        output = decodeURIComponent(input);
+        break;
+    }
+    document.getElementById('text-output').value = output;
+  } catch(e) {
+    document.getElementById('text-output').value = '⚠ 错误：输入内容无法解码，请检查内容是否正确';
+  }
+}
+
+function copyOutput() {
+  const val = document.getElementById('text-output').value;
+  if (val && !val.startsWith('⚠')) copyToClipboard(val);
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA 加解密 - ToolForge</title>
+<meta name="description" content="在线RSA密钥生成、加密解密工具。支持2048/4096位密钥，所有运算在浏览器本地完成。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .pem-box {
+    font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-input);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem;
+    word-break: break-all; white-space: pre-wrap; max-height: 200px; overflow-y: auto;
+    color: var(--text-dim); line-height: 1.5;
+  }
+  .key-label {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.35rem;
+  }
+  .key-label span { font-size: 0.8rem; color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+    <nav>
+    <a href="../index.html">首页</a>
+    <a href="timestamp.html">时间戳</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">编码</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">随机</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html" class="active">RSA</a>
+    <a href="wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/tools/rsa.html">EN</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🔑 RSA 加解密</h1>
+    <p>RSA-OAEP 非对称加密。生成密钥对、加密、解密，全部在浏览器本地完成。<br><a href="../guide/rsa.html" style="font-size:0.85rem;color:var(--text-dim)">📖 RSA 非对称加密原理：公钥和私钥是什么？阅读教程 →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="广告位 · 工具页顶部"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('generate')">🔧 生成密钥</button>
+    <button class="tab-btn" onclick="switchTab('encrypt')">🔐 加密</button>
+    <button class="tab-btn" onclick="switchTab('decrypt')">🔓 解密</button>
+  </div>
+
+  <!-- Generate Key Pair -->
+  <div id="tab-generate">
+    <div class="field">
+      <div class="label-row"><label>密钥长度</label></div>
+      <div class="btn-group">
+        <button class="btn btn-sm active" id="key-2048" onclick="setKeySize(2048)">2048 位（推荐）</button>
+        <button class="btn btn-sm" id="key-4096" onclick="setKeySize(4096)">4096 位（更安全）</button>
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-bottom:1.5rem">
+      <button class="btn btn-accent" onclick="generateKeyPair()" id="gen-btn">🔧 生成密钥对</button>
+    </div>
+    <div id="gen-status" style="color:var(--text-dim);font-size:0.85rem;margin-bottom:0.5rem"></div>
+
+    <div class="field" id="pub-key-area" style="display:none">
+      <div class="key-label">
+        <span>📤 公钥</span>
+        <button class="btn btn-sm" onclick="copyPEM('pub')">📋 复制</button>
+      </div>
+      <div class="pem-box" id="pub-key-pem"></div>
+    </div>
+    <div class="field" id="priv-key-area" style="display:none">
+      <div class="key-label">
+        <span>🔒 私钥 <span style="color:var(--red);font-size:0.7rem">（请妥善保管，不要分享）</span></span>
+        <button class="btn btn-sm" onclick="copyPEM('priv')">📋 复制</button>
+      </div>
+      <div class="pem-box" id="priv-key-pem"></div>
+    </div>
+  </div>
+
+  <!-- Encrypt -->
+  <div id="tab-encrypt" style="display:none">
+    <div class="field">
+      <div class="label-row"><label>公钥 (PEM格式)</label></div>
+      <textarea id="rsa-pubkey-input" placeholder="粘贴公钥（-----BEGIN PUBLIC KEY----- ...）" style="min-height:120px;font-size:0.75rem"></textarea>
+    </div>
+    <div class="field">
+      <div class="label-row"><label>明文内容</label></div>
+      <textarea id="rsa-plaintext" placeholder="输入要加密的内容（注意：RSA 加密有长度限制，2048位最多约190字节）" style="min-height:100px"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="rsaEncrypt()">🔐 加密</button>
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>密文 (Base64)</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('rsa-ciphertext').value)">📋 复制</button>
+      </div>
+      <textarea id="rsa-ciphertext" readonly placeholder="密文将显示在这里..."></textarea>
+    </div>
+    <div id="rsa-enc-error" class="error-msg"></div>
+  </div>
+
+  <!-- Decrypt -->
+  <div id="tab-decrypt" style="display:none">
+    <div class="field">
+      <div class="label-row"><label>私钥 (PEM格式)</label></div>
+      <textarea id="rsa-privkey-input" placeholder="粘贴私钥（-----BEGIN PRIVATE KEY----- ...）" style="min-height:120px;font-size:0.75rem"></textarea>
+    </div>
+    <div class="field">
+      <div class="label-row"><label>密文 (Base64)</label></div>
+      <textarea id="rsa-dec-input" placeholder="粘贴 Base64 格式密文..." style="min-height:100px"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="rsaDecrypt()">🔓 解密</button>
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>明文</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('rsa-dec-output').value)">📋 复制</button>
+      </div>
+      <textarea id="rsa-dec-output" readonly placeholder="解密结果将显示在这里..."></textarea>
+    </div>
+    <div id="rsa-dec-error" class="error-msg"></div>
+  </div>
+
+  <div style="margin-top:1.5rem;padding:0.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:0.8rem;color:var(--text-dim);line-height:1.6">
+    💡 <strong>说明</strong><br>
+    • 算法：RSA-OAEP + SHA-256<br>
+    • 加密长度限制：2048位密钥最多加密约190字节；4096位约446字节<br>
+    • 如需加密长文本，建议用 AES 加密内容，再用 RSA 加密 AES 密钥<br>
+    • <strong>所有运算在您的浏览器本地完成，密钥绝不会上传</strong>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="广告位 · 工具页底部"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — 8 款开发者工具，全部本地运算，数据不出浏览器。</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · 为效率而生</p>
+</footer>
+
+<script src="../js/common.js"></script>
+<script>
+// --- State ---
+let keySize = 2048;
+let currentPubKeyPEM = '';
+let currentPrivKeyPEM = '';
+
+function setKeySize(size) {
+  keySize = size;
+  document.getElementById('key-2048').classList.toggle('active', size === 2048);
+  document.getElementById('key-4096').classList.toggle('active', size === 4096);
+}
+
+// --- Tab switching ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  ['generate','encrypt','decrypt'].forEach(t =>
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none'
+  );
+}
+
+// --- Key Generation ---
+async function generateKeyPair() {
+  const status = document.getElementById('gen-status');
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 生成中...（可能需要几秒）';
+  status.textContent = '正在生成 ' + keySize + ' 位密钥对...';
+
+  try {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSA-OAEP',
+        modulusLength: keySize,
+        publicExponent: new Uint8Array([1, 0, 1]), // 65537
+        hash: 'SHA-256',
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    // Export public key as SPKI
+    const pubSpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    currentPubKeyPEM = spkiToPEM(pubSpki);
+
+    // Export private key as PKCS8
+    const privPkcs8 = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+    currentPrivKeyPEM = pkcs8ToPEM(privPkcs8);
+
+    document.getElementById('pub-key-pem').textContent = currentPubKeyPEM;
+    document.getElementById('priv-key-pem').textContent = currentPrivKeyPEM;
+    document.getElementById('pub-key-area').style.display = 'block';
+    document.getElementById('priv-key-area').style.display = 'block';
+    status.textContent = '✅ ' + keySize + ' 位密钥对已生成';
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = '生成失败：' + e.message;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔧 生成密钥对';
+  }
+}
+
+function spkiToPEM(buffer) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return '-----BEGIN PUBLIC KEY-----\n' + lines + '\n-----END PUBLIC KEY-----';
+}
+
+function pkcs8ToPEM(buffer) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return '-----BEGIN PRIVATE KEY-----\n' + lines + '\n-----END PRIVATE KEY-----';
+}
+
+function pemToArrayBuffer(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s/g, '');
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function copyPEM(type) {
+  const pem = type === 'pub' ? currentPubKeyPEM : currentPrivKeyPEM;
+  if (pem) copyToClipboard(pem);
+}
+
+// --- Encrypt ---
+async function rsaEncrypt() {
+  const errorEl = document.getElementById('rsa-enc-error');
+  const output = document.getElementById('rsa-ciphertext');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const pem = document.getElementById('rsa-pubkey-input').value.trim();
+  const plaintext = document.getElementById('rsa-plaintext').value;
+  if (!pem) { errorEl.textContent = '请粘贴公钥'; return; }
+  if (!plaintext) { errorEl.textContent = '请输入要加密的内容'; return; }
+
+  try {
+    const pubKey = await crypto.subtle.importKey(
+      'spki', pemToArrayBuffer(pem),
+      { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']
+    );
+    const enc = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'RSA-OAEP' }, pubKey, enc.encode(plaintext)
+    );
+    output.value = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  } catch(e) {
+    errorEl.textContent = '加密失败：公钥格式错误或内容过长';
+  }
+}
+
+// --- Decrypt ---
+async function rsaDecrypt() {
+  const errorEl = document.getElementById('rsa-dec-error');
+  const output = document.getElementById('rsa-dec-output');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const pem = document.getElementById('rsa-privkey-input').value.trim();
+  const b64Input = document.getElementById('rsa-dec-input').value.trim();
+  if (!pem) { errorEl.textContent = '请粘贴私钥'; return; }
+  if (!b64Input) { errorEl.textContent = '请粘贴密文'; return; }
+
+  try {
+    const privKey = await crypto.subtle.importKey(
+      'pkcs8', pemToArrayBuffer(pem),
+      { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']
+    );
+    const ciphertext = Uint8Array.from(atob(b64Input), c => c.charCodeAt(0));
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'RSA-OAEP' }, privKey, ciphertext
+    );
+    output.value = new TextDecoder().decode(decrypted);
+  } catch(e) {
+    errorEl.textContent = '解密失败：私钥不匹配或密文损坏';
+  }
+}
+</script>
+
+</body>
+</html>

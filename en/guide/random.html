@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Random String Generation: crypto.getRandomValues vs Math.random - ToolForge</title>
+<meta name="description" content="Deep dive into random string generation: the critical differences between crypto.getRandomValues and Math.random, why CSPRNG matters for security, and how to pick the right character set. Includes online generator tool.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/random.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🎲 Random String Generation: True Random vs Pseudo-Random</h1>
+    <p>From fundamentals to practice — understanding what cryptographically secure randomness really means</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>Why Do You Need "True" Randomness?</h2>
+    <p>
+      Writing a random string generator is easy — but writing a <strong>secure</strong> one isn't as simple as calling <code>Math.random()</code>. If the random strings you generate are for password reset tokens, verification codes, or API keys — and an attacker can predict your "random" output — they've just been handed the keys to your system.
+    </p>
+
+    <div class="highlight">
+      <strong>Key distinction:</strong> <code>Math.random()</code> is a "looks random" pseudo-random number generator (PRNG); <code>crypto.getRandomValues()</code> is a cryptographically secure random number generator (CSPRNG). The former is fast but predictable; the latter is slower but impossible to predict.
+    </div>
+
+    <h2>Math.random(): Why It's Not Secure Enough</h2>
+
+    <h3>How It Works</h3>
+    <p>
+      <code>Math.random()</code> uses a pseudo-random number generator (typically the xorshift128+ algorithm). It starts from an initial seed and continuously generates the next number through a mathematical formula. Given the same seed, you get the exact same sequence every time.
+    </p>
+
+    <h3>Three Fatal Weaknesses</h3>
+    <ul>
+      <li><strong>Predictability:</strong> If an attacker guesses the seed (e.g., the current timestamp), they can reproduce the entire random sequence</li>
+      <li><strong>State recovery:</strong> Observing a few consecutive outputs allows reconstructing the internal state and predicting future values</li>
+      <li><strong>Wrong design goals:</strong> V8's <code>Math.random()</code> optimizes for speed and uniform distribution — not security</li>
+    </ul>
+
+    <pre><code>// ❌ Never use Math.random() for security tokens!
+function unsafeToken(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}</code></pre>
+
+    <h2>crypto.getRandomValues(): Cryptographically Secure</h2>
+
+    <h3>How It Works</h3>
+    <p>
+      <code>crypto.getRandomValues()</code> is the CSPRNG provided by the Web Crypto API. It draws from the operating system's <strong>true entropy sources</strong> — mouse movements, keyboard timing, disk interrupts, network packet arrival times, and other hardware-level random events that are fundamentally unpredictable.
+    </p>
+
+    <h3>Why It's Secure</h3>
+    <ul>
+      <li><strong>Real entropy:</strong> Not computed from a formula — collected from physical-world randomness</li>
+      <li><strong>Not reversible:</strong> Observing outputs doesn't let you reconstruct internal state or predict future values</li>
+      <li><strong>No seeding:</strong> There is no "seed" concept — outputs cannot be reproduced</li>
+      <li><strong>Browser native:</strong> Available in all modern browsers with zero dependencies</li>
+    </ul>
+
+    <pre><code>// ✅ Use crypto.getRandomValues() for secure tokens
+function safeToken(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars[arr[i] % chars.length];
+  }
+  return result;
+}</code></pre>
+
+    <table>
+      <tr><th>Property</th><th>Math.random()</th><th>crypto.getRandomValues()</th></tr>
+      <tr><td>Type</td><td>PRNG (pseudo-random)</td><td>CSPRNG (cryptographic)</td></tr>
+      <tr><td>Predictable?</td><td>Yes</td><td>No</td></tr>
+      <tr><td>Entropy source</td><td>Math formula + seed</td><td>OS hardware entropy</td></tr>
+      <tr><td>Speed</td><td>Extremely fast</td><td>Fast (entropy-pool limited)</td></tr>
+      <tr><td>Use cases</td><td>Games, animations, A/B tests</td><td>Passwords, tokens, crypto keys</td></tr>
+      <tr><td>Thread-safe</td><td>Yes</td><td>Yes</td></tr>
+    </table>
+
+    <h2>When Do You Need Cryptographic Randomness?</h2>
+    <ul>
+      <li>🔑 <strong>Generating API Keys / Access Tokens:</strong> Using Math.random() is handing the keys to an attacker</li>
+      <li>📧 <strong>Password reset links:</strong> Predictable tokens = arbitrary account takeover</li>
+      <li>🎫 <strong>Coupon / invite codes:</strong> If the pattern is guessable, your promo budget disappears</li>
+      <li>🎮 <strong>In-game "random" drops (not critical):</strong> Math.random() is perfectly fine</li>
+      <li>🆔 <strong>Unique ID generation:</strong> UUID v4 already uses crypto under the hood</li>
+    </ul>
+
+    <h2>The Modulo Bias Problem</h2>
+    <p>
+      Even with <code>crypto.getRandomValues()</code>, using <code>arr[i] % charset.length</code> to pick a character technically introduces <strong>modulo bias</strong>. Since <code>Uint32</code> ranges from 0 to 4,294,967,295, if the character set length doesn't evenly divide this range, some characters appear slightly more often.
+    </p>
+    <p>
+      <strong>In practice:</strong> When the character set length is much smaller than 2³², the bias is negligible (< 0.0000001%) and has no practical impact for almost all applications. For extreme uniformity requirements, rejection sampling is an option — but for everyday use, modulo is more than sufficient.
+    </p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Generate a secure random string now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">Configurable length, uppercase/lowercase/digits/special chars, uses crypto.getRandomValues</p>
+    <a href="../tools/random.html" class="btn">🎲 Open Random String Generator</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: Can crypto.getRandomValues run out of randomness?</h3>
+    <p>Operating systems maintain an entropy pool, continuously collecting randomness from hardware events. Normal applications will virtually never deplete it. In browsers, a single call generates up to 65,536 bytes — more than enough. For large quantities, make multiple calls.</p>
+
+    <h3>Q: Does Node.js have crypto.getRandomValues?</h3>
+    <p>Yes! Node.js's <code>crypto</code> module provides both <code>crypto.randomBytes()</code> (the traditional API) and <code>crypto.getRandomValues()</code> (the Web-compatible API). Both use the OS's CSPRNG and are fully secure.</p>
+
+    <h3>Q: Is Math.random() really that easy to crack?</h3>
+    <p>For V8's xorshift128+ implementation, an attacker who observes roughly 3-4 consecutive <code>Math.random()</code> outputs (as 64-bit floats) can recover the internal state using a Z3 solver. Public proof-of-concept attack code has been available since 2018.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字数统计全攻略：中文字、英文词、字符数到底怎么算？ - ToolForge</title>
+<meta name="description" content="中文和英文的字数统计方式完全不同：一个汉字就是一个字，英文要靠空格分词。本文详解字符数、字数、CJK统计、混合文本的坑，附在线工具。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/wordcount.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>📝 字数统计全攻略：中文、英文、混排到底怎么算？</h1>
+    <p>别以为"数数"很简单——中英文的字数统计逻辑完全不同</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>字符数、字数、单词数——先搞清楚这三个概念</h2>
+    <p>
+      很多人在用字数统计工具的时候，分不清"字符"和"字"的区别。这在纯英文环境里问题不大，但在中文环境里——<strong>完全不是一回事</strong>。
+    </p>
+    <ul>
+      <li><strong>字符数（Character Count）</strong>：所有看得见的符号都算一个字符。字母、汉字、标点、空格、换行符——统统算进去。<code>"Hello 你好"</code> 的字符数是 8（H-e-l-l-o-空格-你-好）。</li>
+      <li><strong>字数（Word Count）</strong>：这个最复杂。英文按空格分词，<code>"Hello world"</code> 是 2 个词。但中文没有空格——<strong>一个汉字通常就是一个"字"</strong>。</li>
+      <li><strong>字符数（无空格）</strong>：去掉所有空白字符后的字符数，用于需要精确计数的场景（比如短信计费）。</li>
+    </ul>
+
+    <div class="highlight">
+      <strong>核心区别：</strong>英文统计"单词"（words），中文统计"字"（characters as words）。<code>"I love coding"</code> = 3个单词；<code>"我爱编程"</code> = 4个字。
+    </div>
+
+    <h2>CJK文字 vs 拉丁文字：两种完全不同的计数逻辑</h2>
+    <p>
+      CJK（中日韩）文字属于<strong>表意文字</strong>，每个字符本身就代表一个完整的意思单位。拉丁文字（英语、法语、西班牙语等）属于<strong>拼音文字</strong>，需要通过空格把字母串成单词才能表达完整意思。
+    </p>
+
+    <h3>CJK计数规则</h3>
+    <p>
+      中文、日文、韩文不存在"单词"的概念（韩文虽然有空格，但统计上通常也按字符数处理）。一个汉字、一个假名、一个谚文字符，在计数时各算一个字。
+    </p>
+    <pre><code>// 中文：每个汉字算一个字
+"今天天气真好" → 中文字数：6
+
+// 日文：假名和汉字都算
+"今日は天気がいい" → 字符数：9</code></pre>
+
+    <h3>拉丁文字计数规则</h3>
+    <p>
+      英文等语言通过空格分词。但也有一堆边界情况：
+    </p>
+    <ul>
+      <li><strong>连字符</strong>：<code>"state-of-the-art"</code> 算 1 个词还是 4 个？大多数工具算 1 个。</li>
+      <li><strong>缩写</strong>：<code>"I.T. support"</code> —— 这个点让分词变得复杂。</li>
+      <li><strong>撇号</strong>：<code>"don't"</code> 算 1 个词，<code>"it's"</code> 算 1 个词。</li>
+      <li><strong>数字</strong>：<code>"1,000 dollars"</code> —— <code>1,000</code> 算 1 个词。</li>
+    </ul>
+
+    <h2>混合文本的统计陷阱</h2>
+    <p>
+      真实的文本往往是中英混排的。比如：
+    </p>
+    <pre><code>"我们使用 Python 和 Rust 来构建 API 服务"</code></pre>
+    <p>
+      这里面有中文（"我们使用""来构建""服务"），有英文单词（"Python""Rust"），还有缩写（"API"）。如果纯按空格分词，中文部分会连成一大坨；如果纯按字符数，英文单词又会被拆散。
+    </p>
+    <p>
+      <strong>Word Count 工具的混合策略：</strong>先用正则提取所有中文字符单独计数（<code>[\u4e00-\u9fff]</code> 范围），再用空格分词统计英文单词，过滤掉纯中文段。这样 <code>"我愛 Python 编程"</code> 会被统计为：中文字数 4 + 英文单词数 1。
+    </p>
+
+    <div class="highlight">
+      <strong>实用建议：</strong>如果你要投稿、写论文、做SEO内容——<strong>中文字数和英文单词数分开看</strong>。大多数平台的"字数要求"指的是中文字数，英文部分按单词数折算（通常 1 个英文单词 ≈ 2 个中文字符）。
+    </div>
+
+    <h2>什么时候你需要字数统计？</h2>
+
+    <h3>1. 写作与投稿</h3>
+    <p>
+      公众号文章有字数限制？论文有摘要字数要求？征文比赛要求 800 字？<strong>粘贴进去，秒出结果。</strong> 比在Word里找字数统计快 10 倍。
+    </p>
+
+    <h3>2. SEO内容优化</h3>
+    <p>
+      谷歌和百度都喜欢"有料"的页面。但什么叫有料？一个常见的参考标准是 <strong>1500 字以上</strong>。字数统计工具帮你快速判断当前页面内容是否"够厚"。
+    </p>
+
+    <h3>3. 翻译报价</h3>
+    <p>
+      翻译行业通常按"源语言字数"报价。中译英按中文字数，英译中按英文单词数。丢进工具，三秒出报价依据。
+    </p>
+
+    <h3>4. 社交媒体发帖</h3>
+    <p>
+      Twitter/X 的 280 字符限制、微博的 2000 字长文、小红书的正文限制——每个平台的规则都不一样。粘贴进去看看超没超。
+    </p>
+
+    <h3>5. 编程与数据处理</h3>
+    <p>
+      处理用户输入验证、日志长度检查、API payload 大小估算——字符计数是最基础的需求。<code>str.length</code> 不一定等于你想要的"字数"。
+    </p>
+
+    <h2>行数和段落数：不只是换行那么简单</h2>
+    <p>
+      行数按换行符 <code>\n</code> 分割，段落数按<strong>空行</strong>（两个连续的换行符）分割。
+    </p>
+    <pre><code>这是第一段的内容。
+这里还是第一段。
+
+这是第二段。
+中间隔了一个空行。</code></pre>
+    <p>
+      上面这段文本：<strong>4 行，2 个段落</strong>。
+    </p>
+
+    <div class="highlight">
+      <p>
+        <strong>注意：</strong>段落分割用的是"至少一个空行"规则。如果你用 <code>&lt;br&gt;</code> 换行（单换行而非双换行），在纯文本统计中不会被识别为新段落。Markdown 里两个换行才等于一个段落分隔符。
+      </p>
+    </div>
+
+    <h2>为什么用在线字数统计而不是Word？</h2>
+    <ul>
+      <li>⚡ <strong>即开即用</strong>：不需要打开笨重的Word，浏览器标签页里随时用。</li>
+      <li>🔒 <strong>本地运算</strong>：文本不会上传到服务器，粘贴即统计，隐私无忧。</li>
+      <li>📋 <strong>一键粘贴</strong>：从任何地方复制，点一下粘贴按钮，结果直接出来。</li>
+      <li>🔄 <strong>实时更新</strong>：打字的同时数字就在变，不用点"统计"按钮。</li>
+      <li>🌐 <strong>跨平台</strong>：手机、平板、电脑——有浏览器就能用。</li>
+    </ul>
+
+    <h2>常见问题</h2>
+    <h3>Q: 标点符号算不算字数？</h3>
+    <p>标点算字符数，但不影响"字数"和"单词数"的统计。</p>
+
+    <h3>Q: 空格算字符吗？</h3>
+    <p>算。所以你能看到"总字符数"和"字符数（无空格）"两个指标——差值就是你文本里的空白字符数量。</p>
+
+    <h3>Q: 中文和英文混排的字数怎么算？</h3>
+    <p>分开统计：中文字数单独显示，英文单词数单独显示。你可以根据需要自己合计。</p>
+
+    <h3>Q: 为什么我的中文文本"英文单词数"不为0？</h3>
+    <p>如果你输入了空格、数字、英文标点——它们会被按空格分词后算作"单词"。这是预期行为：混合文本中，非纯中文段落的 token 都被计入了。</p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就试试在线字数统计</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">粘贴文本，实时查看中文字数、英文单词数、字符数、行数、段落数</p>
+    <a href="../tools/wordcount.html" class="btn">📝 打开字数统计工具</a>
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

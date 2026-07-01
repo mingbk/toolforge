@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA Asymmetric Encryption: Public & Private Keys Explained - ToolForge</title>
+<meta name="description" content="Deep dive into RSA asymmetric encryption: the mathematics behind public/private keys, RSA-OAEP padding, 2048-bit vs 4096-bit key selection, and hybrid encryption. Includes online RSA key generation and encryption tool.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/rsa.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🔑 RSA Asymmetric Encryption: The Magic of Two Keys</h1>
+    <p>Understanding public/private key pairs, RSA-OAEP padding, and how to securely generate and use RSA keys</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>What Is Asymmetric Encryption?</h2>
+    <p>
+      The defining feature of asymmetric encryption is <strong>two different keys</strong>: a public key and a private key. The public key can be shared with anyone and is used to <strong>encrypt</strong> data. The private key must be kept strictly secret and is used to <strong>decrypt</strong> data.
+    </p>
+    <p>
+      This is fundamentally different from AES — where encryption and decryption use the same key (symmetric). Asymmetric encryption solves the "key distribution" problem: how do you securely deliver a key to someone? With RSA, you only need the recipient's public key to encrypt, and their private key never needs to leave their device.
+    </p>
+
+    <div class="highlight">
+      <strong>Analogy:</strong> The public key is like a mailbox address — anyone can drop a letter in. The private key is like the mailbox key — only the key holder can open it and read the letters inside.
+    </div>
+
+    <h2>The Mathematics Behind RSA (Simplified)</h2>
+    <p>
+      RSA's security rests on the <strong>difficulty of factoring large composite numbers</strong>. In simple terms:
+    </p>
+    <ul>
+      <li>Pick two very large prime numbers <code>p</code> and <code>q</code> (e.g., 1024 bits each)</li>
+      <li>Compute <code>n = p × q</code>. This "n" is the modulus, part of both public and private keys</li>
+      <li>Choose a public exponent <code>e</code> (usually 65537)</li>
+      <li>Compute the private exponent <code>d</code> such that <code>(m^e)^d ≡ m (mod n)</code></li>
+    </ul>
+    <p>
+      Encryption is <code>c = m^e mod n</code>, decryption is <code>m = c^d mod n</code>. <strong>The core challenge:</strong> if you only know <code>n</code> (which is public), factoring it to recover <code>p</code> and <code>q</code> requires splitting a 2048-bit integer — with current computing power, this would take longer than the age of the universe.
+    </p>
+
+    <h2>RSA-OAEP: Why You Can't Use "Plain" RSA</h2>
+    <p>
+      The textbook "RSA encryption = m^e mod n" is just the foundation — using it directly has serious security flaws. Real-world RSA always includes a <strong>padding scheme</strong>. OAEP (Optimal Asymmetric Encryption Padding) is the current standard.
+    </p>
+
+    <table>
+      <tr><th>Padding Scheme</th><th>Security</th><th>Recommended?</th></tr>
+      <tr><td>None (Textbook RSA)</td><td>❌ Multiple attacks</td><td>Never use</td></tr>
+      <tr><td>PKCS#1 v1.5</td><td>⚠️ Known weaknesses</td><td>Avoid</td></tr>
+      <tr><td><strong>OAEP (SHA-256)</strong></td><td>✅ Secure</td><td><strong>✅ Recommended</strong></td></tr>
+    </table>
+
+    <p>
+      OAEP introduces random padding before encryption, ensuring <strong>the same plaintext produces different ciphertext every time</strong> and preventing multiple mathematical attacks. The browser Web Crypto API supports RSA-OAEP natively:
+    </p>
+
+    <pre><code>// RSA-OAEP encryption with Web Crypto API
+const pubKey = await crypto.subtle.importKey(
+  'spki', pemToArrayBuffer(pem),
+  { name: 'RSA-OAEP', hash: 'SHA-256' },
+  false, ['encrypt']
+);
+const ciphertext = await crypto.subtle.encrypt(
+  { name: 'RSA-OAEP' }, pubKey, new TextEncoder().encode(plaintext)
+);</code></pre>
+
+    <h2>2048-bit vs 4096-bit: Which to Choose?</h2>
+    <table>
+      <tr><th>Parameter</th><th>2048-bit</th><th>4096-bit</th></tr>
+      <tr><td>Security level</td><td>~112-bit equivalent</td><td>~140-bit equivalent</td></tr>
+      <tr><td>Key generation time</td><td>~1-3 seconds</td><td>~10-30 seconds</td></tr>
+      <tr><td>Encryption speed</td><td>Fast</td><td>4-8× slower</td></tr>
+      <tr><td>Max plaintext size</td><td>~190 bytes</td><td>~446 bytes</td></tr>
+      <tr><td>NIST recommendation</td><td>Valid through 2030</td><td>Long-term security</td></tr>
+    </table>
+    <p>
+      <strong>General recommendation:</strong> 2048-bit is sufficient for most scenarios. If you need longer-term security (e.g., encrypting data that must remain secure for 10+ years), or your security policy mandates it, choose 4096-bit. Modern browsers generate 2048-bit keys in 1-3 seconds; 4096-bit takes 10-30 seconds.
+    </p>
+
+    <h2>RSA's Length Limit and the Solution</h2>
+    <p>
+      A core limitation of RSA: <strong>the plaintext cannot exceed the key size minus padding overhead</strong>. With 2048-bit RSA-OAEP (SHA-256), you can encrypt at most ~190 bytes. If you need to encrypt an image or a long document, RSA alone won't work.
+    </p>
+    <p>
+      <strong>The standard solution — Hybrid Encryption:</strong>
+    </p>
+    <ol style="margin:0.5rem 0 1rem 1.5rem;color:var(--text-dim)">
+      <li>Generate a random AES key</li>
+      <li>Use AES to encrypt the actual data (fast, no length limit)</li>
+      <li>Use RSA to encrypt that AES key (only 32 bytes — RSA handles this easily)</li>
+      <li>Send the RSA-encrypted key together with the AES-encrypted data</li>
+    </ol>
+    <p>
+      This is exactly how HTTPS, PGP, SSH, and virtually every modern encryption protocol works. RSA securely delivers the key; AES efficiently encrypts the data — they complement each other.
+    </p>
+
+    <h2>When Should You Use RSA?</h2>
+    <ul>
+      <li>🔐 <strong>Secure key exchange:</strong> Negotiating a shared key over an insecure channel (TLS handshake)</li>
+      <li>✍️ <strong>Digital signatures:</strong> Sign with your private key, anyone verifies with your public key — proving the message is from you</li>
+      <li>📧 <strong>Encrypted email:</strong> Encrypt email content with the recipient's public key</li>
+      <li>🔑 <strong>SSH login:</strong> Generate a key pair locally, place your public key on the server, authenticate with your private key</li>
+      <li>🔄 <strong>API authentication:</strong> Sign requests with a private key, server verifies with the public key — JWT's RS256 algorithm</li>
+    </ul>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Generate an RSA key pair now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">2048/4096-bit, one-click generation and copy in PEM format</p>
+    <a href="../tools/rsa.html" class="btn">🔑 Open RSA Encryption Tool</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: Can the public key be used to derive the private key?</h3>
+    <p>No. Deriving the private key (exponent <code>d</code>) from the public key (modulus <code>n</code> and exponent <code>e</code>) requires knowing the prime factors <code>p</code> and <code>q</code>. Factoring a 2048-bit integer would take all the world's computing power longer than the age of the universe. However, note that quantum computers (running Shor's algorithm) can factor large integers in polynomial time — RSA is not "post-quantum secure."</p>
+
+    <h3>Q: Why is the public exponent e usually 65537?</h3>
+    <p>65537 (binary: 10000000000000001) is prime and has only two '1' bits. This makes encryption (<code>m^e mod n</code>) extremely fast via the square-and-multiply algorithm. 65537 was chosen over 3 (an even smaller option) to prevent low-exponent attacks. It represents the optimal balance between performance and security.</p>
+
+    <h3>Q: How often should RSA keys be rotated?</h3>
+    <p>NIST recommends 2048-bit RSA keys remain safe through 2030. For high-security applications, rotate annually; for general use, every 2-3 years is reasonable. Critical point: if you suspect a private key has been compromised, rotate immediately — RSA keys lack forward secrecy; a leaked private key can decrypt all historical ciphertexts.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

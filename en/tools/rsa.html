@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA Encryption/Decryption - ToolForge</title>
+<meta name="description" content="Online RSA key generation, encryption and decryption tool. Supports 2048/4096-bit keys. All computation happens locally in your browser.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .pem-box {
+    font-family: var(--font-mono); font-size: 0.75rem; background: var(--bg-input);
+    border: 1px solid var(--border); border-radius: var(--radius); padding: 0.75rem 1rem;
+    word-break: break-all; white-space: pre-wrap; max-height: 200px; overflow-y: auto;
+    color: var(--text-dim); line-height: 1.5;
+  }
+  .key-label {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 0.35rem;
+  }
+  .key-label span { font-size: 0.8rem; color: var(--text-dim); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+    <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html" class="active">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/rsa.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🔑 RSA Encryption / Decryption</h1>
+    <p>RSA-OAEP asymmetric encryption. Generate key pairs, encrypt, and decrypt — all locally in your browser.<br><a href="../guide/rsa.html" style="font-size:0.85rem;color:var(--text-dim)">📖 How does RSA work? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('generate')">🔧 Generate Key</button>
+    <button class="tab-btn" onclick="switchTab('encrypt')">🔐 Encrypt</button>
+    <button class="tab-btn" onclick="switchTab('decrypt')">🔓 Decrypt</button>
+  </div>
+
+  <!-- Generate Key Pair -->
+  <div id="tab-generate">
+    <div class="field">
+      <div class="label-row"><label>Key Size</label></div>
+      <div class="btn-group">
+        <button class="btn btn-sm active" id="key-2048" onclick="setKeySize(2048)">2048-bit (Recommended)</button>
+        <button class="btn btn-sm" id="key-4096" onclick="setKeySize(4096)">4096-bit (More Secure)</button>
+      </div>
+    </div>
+
+    <div class="btn-group" style="margin-bottom:1.5rem">
+      <button class="btn btn-accent" onclick="generateKeyPair()" id="gen-btn">🔧 Generate Key Pair</button>
+    </div>
+    <div id="gen-status" style="color:var(--text-dim);font-size:0.85rem;margin-bottom:0.5rem"></div>
+
+    <div class="field" id="pub-key-area" style="display:none">
+      <div class="key-label">
+        <span>📤 Public Key</span>
+        <button class="btn btn-sm" onclick="copyPEM('pub')">📋 Copy</button>
+      </div>
+      <div class="pem-box" id="pub-key-pem"></div>
+    </div>
+    <div class="field" id="priv-key-area" style="display:none">
+      <div class="key-label">
+        <span>🔒 Private Key <span style="color:var(--red);font-size:0.7rem">(Keep this secret — never share)</span></span>
+        <button class="btn btn-sm" onclick="copyPEM('priv')">📋 Copy</button>
+      </div>
+      <div class="pem-box" id="priv-key-pem"></div>
+    </div>
+  </div>
+
+  <!-- Encrypt -->
+  <div id="tab-encrypt" style="display:none">
+    <div class="field">
+      <div class="label-row"><label>Public Key (PEM format)</label></div>
+      <textarea id="rsa-pubkey-input" placeholder="Paste public key (-----BEGIN PUBLIC KEY----- ...)" style="min-height:120px;font-size:0.75rem"></textarea>
+    </div>
+    <div class="field">
+      <div class="label-row"><label>Plaintext</label></div>
+      <textarea id="rsa-plaintext" placeholder="Enter content to encrypt (Note: RSA has a length limit — 2048-bit allows ~190 bytes max)" style="min-height:100px"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="rsaEncrypt()">🔐 Encrypt</button>
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>Ciphertext (Base64)</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('rsa-ciphertext').value)">📋 Copy</button>
+      </div>
+      <textarea id="rsa-ciphertext" readonly placeholder="Ciphertext will appear here..."></textarea>
+    </div>
+    <div id="rsa-enc-error" class="error-msg"></div>
+  </div>
+
+  <!-- Decrypt -->
+  <div id="tab-decrypt" style="display:none">
+    <div class="field">
+      <div class="label-row"><label>Private Key (PEM format)</label></div>
+      <textarea id="rsa-privkey-input" placeholder="Paste private key (-----BEGIN PRIVATE KEY----- ...)" style="min-height:120px;font-size:0.75rem"></textarea>
+    </div>
+    <div class="field">
+      <div class="label-row"><label>Ciphertext (Base64)</label></div>
+      <textarea id="rsa-dec-input" placeholder="Paste Base64-encoded ciphertext..." style="min-height:100px"></textarea>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="rsaDecrypt()">🔓 Decrypt</button>
+    </div>
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>Plaintext</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('rsa-dec-output').value)">📋 Copy</button>
+      </div>
+      <textarea id="rsa-dec-output" readonly placeholder="Decrypted result will appear here..."></textarea>
+    </div>
+    <div id="rsa-dec-error" class="error-msg"></div>
+  </div>
+
+  <div style="margin-top:1.5rem;padding:0.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:0.8rem;color:var(--text-dim)">
+    💡 <strong>Tips:</strong><br>
+    • 2048-bit keys are sufficient for most use cases; 4096-bit offers more security but slower generation<br>
+    • RSA encryption has a length limit: 2048-bit keys encrypt up to ~190 bytes; 4096-bit up to ~446 bytes<br>
+    • To encrypt long messages, use AES to encrypt the content and RSA to encrypt the AES key<br>
+    • <strong>All computation happens locally in your browser. Keys are never uploaded.</strong>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+// --- State ---
+let keySize = 2048;
+let currentPubKeyPEM = '';
+let currentPrivKeyPEM = '';
+
+function setKeySize(size) {
+  keySize = size;
+  document.getElementById('key-2048').classList.toggle('active', size === 2048);
+  document.getElementById('key-4096').classList.toggle('active', size === 4096);
+}
+
+// --- Tab switching ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  ['generate','encrypt','decrypt'].forEach(t =>
+    document.getElementById('tab-' + t).style.display = t === tab ? 'block' : 'none'
+  );
+}
+
+// --- Key Generation ---
+async function generateKeyPair() {
+  const status = document.getElementById('gen-status');
+  const btn = document.getElementById('gen-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating... (may take a few seconds)';
+  status.textContent = 'Generating ' + keySize + '-bit key pair...';
+
+  try {
+    const keyPair = await crypto.subtle.generateKey(
+      {
+        name: 'RSA-OAEP',
+        modulusLength: keySize,
+        publicExponent: new Uint8Array([1, 0, 1]), // 65537
+        hash: 'SHA-256',
+      },
+      true,
+      ['encrypt', 'decrypt']
+    );
+
+    // Export public key as SPKI
+    const pubSpki = await crypto.subtle.exportKey('spki', keyPair.publicKey);
+    currentPubKeyPEM = spkiToPEM(pubSpki);
+
+    // Export private key as PKCS8
+    const privPkcs8 = await crypto.subtle.exportKey('pkcs8', keyPair.privateKey);
+    currentPrivKeyPEM = pkcs8ToPEM(privPkcs8);
+
+    document.getElementById('pub-key-pem').textContent = currentPubKeyPEM;
+    document.getElementById('priv-key-pem').textContent = currentPrivKeyPEM;
+    document.getElementById('pub-key-area').style.display = 'block';
+    document.getElementById('priv-key-area').style.display = 'block';
+    status.textContent = '✅ ' + keySize + '-bit key pair generated';
+    status.style.color = 'var(--green)';
+  } catch(e) {
+    status.textContent = 'Generation failed: ' + e.message;
+    status.style.color = 'var(--red)';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔧 Generate Key Pair';
+  }
+}
+
+function spkiToPEM(buffer) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return '-----BEGIN PUBLIC KEY-----\n' + lines + '\n-----END PUBLIC KEY-----';
+}
+
+function pkcs8ToPEM(buffer) {
+  const b64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+  const lines = b64.match(/.{1,64}/g).join('\n');
+  return '-----BEGIN PRIVATE KEY-----\n' + lines + '\n-----END PRIVATE KEY-----';
+}
+
+function pemToArrayBuffer(pem) {
+  const b64 = pem.replace(/-----[^-]+-----/g, '').replace(/\s/g, '');
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  return bytes.buffer;
+}
+
+function copyPEM(type) {
+  const pem = type === 'pub' ? currentPubKeyPEM : currentPrivKeyPEM;
+  if (pem) copyToClipboard(pem);
+}
+
+// --- Encrypt ---
+async function rsaEncrypt() {
+  const errorEl = document.getElementById('rsa-enc-error');
+  const output = document.getElementById('rsa-ciphertext');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const pem = document.getElementById('rsa-pubkey-input').value.trim();
+  const plaintext = document.getElementById('rsa-plaintext').value;
+  if (!pem) { errorEl.textContent = 'Please paste a public key'; return; }
+  if (!plaintext) { errorEl.textContent = 'Please enter content to encrypt'; return; }
+
+  try {
+    const pubKey = await crypto.subtle.importKey(
+      'spki', pemToArrayBuffer(pem),
+      { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt']
+    );
+    const enc = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'RSA-OAEP' }, pubKey, enc.encode(plaintext)
+    );
+    output.value = btoa(String.fromCharCode(...new Uint8Array(ciphertext)));
+  } catch(e) {
+    errorEl.textContent = 'Encryption failed: invalid public key or message too long';
+  }
+}
+
+// --- Decrypt ---
+async function rsaDecrypt() {
+  const errorEl = document.getElementById('rsa-dec-error');
+  const output = document.getElementById('rsa-dec-output');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const pem = document.getElementById('rsa-privkey-input').value.trim();
+  const b64Input = document.getElementById('rsa-dec-input').value.trim();
+  if (!pem) { errorEl.textContent = 'Please paste a private key'; return; }
+  if (!b64Input) { errorEl.textContent = 'Please paste the ciphertext'; return; }
+
+  try {
+    const privKey = await crypto.subtle.importKey(
+      'pkcs8', pemToArrayBuffer(pem),
+      { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt']
+    );
+    const ciphertext = Uint8Array.from(atob(b64Input), c => c.charCodeAt(0));
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'RSA-OAEP' }, privKey, ciphertext
+    );
+    output.value = new TextDecoder().decode(decrypted);
+  } catch(e) {
+    errorEl.textContent = 'Decryption failed: private key mismatch or corrupted ciphertext';
+  }
+}
+</script>
+
+</body>
+</html>

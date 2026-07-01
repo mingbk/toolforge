@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UUID Generator - ToolForge</title>
+<meta name="description" content="Free online UUID v4 generator. Generate unique identifiers in bulk, one-click copy.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html" class="active">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/uuid.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🆔 UUID Generator</h1>
+    <p>Generate UUID v4 random identifiers. Each generation is globally unique.<br><a href="../guide/uuid.html" style="font-size:0.85rem;color:var(--text-dim)">📖 What is a UUID? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <div class="field" style="margin-bottom:0.5rem">
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="generateOne()">🎲 Generate One</button>
+      <button class="btn" onclick="generateBatch(5)">Generate 5</button>
+      <button class="btn" onclick="generateBatch(10)">Generate 10</button>
+      <button class="btn" onclick="generateBatch(20)">Generate 20</button>
+    </div>
+    <label style="display:flex;align-items:center;gap:0.5rem;margin-top:0.75rem;cursor:pointer;font-size:0.85rem;color:var(--text-dim)">
+      <input type="checkbox" id="dash-toggle" checked onchange="renderList()">
+      Keep dashes <span style="font-family:var(--font-mono)">-</span>
+    </label>
+  </div>
+
+  <div class="field" id="result-area">
+    <div class="label-row">
+      <label>Result</label>
+      <button class="btn btn-sm" onclick="copyAll()">📋 Copy All</button>
+    </div>
+    <div id="uuid-list" style="font-family:var(--font-mono);font-size:0.9rem;color:var(--text-dim)">
+      <span style="color:var(--text-dim)">Click the buttons above to generate UUIDs</span>
+    </div>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+function generateUUID() {
+  const uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+  const keepDash = document.getElementById('dash-toggle').checked;
+  return keepDash ? uuid : uuid.replace(/-/g, '');
+}
+
+let currentUUIDs = [];
+
+function renderList() {
+  const el = document.getElementById('uuid-list');
+  if (currentUUIDs.length === 0) {
+    el.innerHTML = '<span style="color:var(--text-dim)">Click the buttons above to generate UUIDs</span>';
+    return;
+  }
+  el.innerHTML = currentUUIDs.map((uuid, i) =>
+    `<div style="padding:0.5rem 0;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
+      <span style="color:var(--green)">${uuid}</span>
+      <div style="display:flex;gap:0.25rem">
+        <button class="btn btn-sm" onclick="copyToClipboard('${uuid}')">📋</button>
+        <button class="btn btn-sm" onclick="copyToClipboard('${uuid.replace(/-/g,'')}')">🔗 Copy without dashes</button>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function generateOne() {
+  currentUUIDs = [generateUUID()];
+  renderList();
+}
+
+function generateBatch(n) {
+  currentUUIDs = Array.from({length: n}, () => generateUUID());
+  renderList();
+}
+
+function copyAll() {
+  if (currentUUIDs.length === 0) return;
+  copyToClipboard(currentUUIDs.join('\n'));
+}
+</script>
+
+</body>
+</html>

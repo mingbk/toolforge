@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is a Unix Timestamp? Converter Guide & Use Cases - ToolForge</title>
+<meta name="description" content="Understand Unix timestamps: what they are, why developers use them, seconds vs milliseconds, the Year 2038 problem. Includes free online converter with timezone support.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/timestamp.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🕐 Unix Timestamps: One Number to Rule All Time</h1>
+    <p>Everything you need to know about timestamps — from the basics to real-world use cases</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>What Is a Unix Timestamp?</h2>
+    <p>
+      A Unix timestamp is simply <strong>the number of seconds that have elapsed since January 1, 1970, 00:00:00 UTC</strong>. That date is called the "Unix Epoch" — the beginning of time as far as computers are concerned.
+    </p>
+    <p>
+      For example, the timestamp <code>1717766400</code> translates to June 8, 2024. Every computer on the planet, regardless of timezone or language, interprets that number as the exact same moment.
+    </p>
+
+    <div class="highlight">
+      <strong>TL;DR:</strong> A timestamp turns the fuzzy concept of "time" into a pure integer — easy to store, compare, and transmit, with zero timezone ambiguity.
+    </div>
+
+    <h2>Why Developers Use Timestamps</h2>
+
+    <h3>1. No Ambiguity</h3>
+    <p>
+      If you say "3 PM on June 8th," someone in Texas and someone in Tokyo see two different moments. But <code>1717858800</code> is the same instant everywhere. Store timestamps in your database instead of formatted dates, and you'll never face the "Beijing time stored, UTC time read" disaster.
+    </p>
+
+    <h3>2. Plain Numbers, Naturally Sortable</h3>
+    <p>
+      A timestamp is just an incrementing integer. <code>WHERE ts > 1717766400</code> is faster than <code>WHERE date > '2024-06-08'</code> and requires no date format parsing.
+    </p>
+
+    <h3>3. Cross-Language Standard</h3>
+    <p>Nearly every programming language has built-in timestamp support:</p>
+    <table>
+      <tr><th>Language</th><th>Get current timestamp (seconds)</th></tr>
+      <tr><td>JavaScript</td><td><code>Math.floor(Date.now() / 1000)</code></td></tr>
+      <tr><td>Python</td><td><code>import time; time.time()</code></td></tr>
+      <tr><td>Go</td><td><code>time.Now().Unix()</code></td></tr>
+      <tr><td>Java</td><td><code>System.currentTimeMillis() / 1000</code></td></tr>
+      <tr><td>Shell</td><td><code>date +%s</code></td></tr>
+      <tr><td>PHP</td><td><code>time()</code></td></tr>
+    </table>
+
+    <h2>Seconds vs Milliseconds: Don't Mix Them Up</h2>
+    <p>
+      This is the #1 rookie mistake. Timestamps come in two common precisions:
+    </p>
+    <ul>
+      <li><strong>Second precision</strong> (10 digits): <code>1717766400</code> — the classic Unix standard, common in databases</li>
+      <li><strong>Millisecond precision</strong> (13 digits): <code>1717766400000</code> — JavaScript's <code>Date.now()</code> returns milliseconds by default</li>
+    </ul>
+    <p>
+      Quick check: <strong>10 digits = seconds, 13 digits = milliseconds</strong>. If your API doc says "pass a timestamp" without specifying seconds or milliseconds — it's almost certainly seconds. If you get it wrong, your date will be sometime in 1970 or 2060. You'll notice.
+    </p>
+
+    <h2>The Year 2038 Problem: Will Timestamps Overflow?</h2>
+    <p>
+      32-bit systems store timestamps in a signed <code>int32</code>, maxing out at <code>2147483647</code> — which is January 19, 2038, 03:14:07 UTC. After that, the integer overflows into negative territory, wrapping time back to 1901. This is the famous <strong>Year 2038 Problem (Y2K38)</strong>.
+    </p>
+    <p>
+      Real-world impact? Any device made after ~2010 runs a 64-bit OS, where the timestamp can reach the heat death of the universe. But embedded systems, old routers, and industrial controllers still on 32-bit — circle January 19, 2038 on your calendar.
+    </p>
+
+    <h2>Real-World Use Cases</h2>
+    <ul>
+      <li>🔍 <strong>Reading logs</strong>: Server logs are full of timestamps. When exactly was <code>1780906800</code>?</li>
+      <li>📊 <strong>Data analysis</strong>: Your CSV has an "order_created" column that's just long numbers. You need batch conversion to dates.</li>
+      <li>👥 <strong>Cross-border teams</strong>: Your colleague is in San Francisco, you're in Beijing. The database stores one timestamp — you each need to see your local time.</li>
+      <li>🔗 <strong>URL parameters</strong>: Many sites embed timestamps in shared links for cache-busting.</li>
+      <li>🧪 <strong>API debugging</strong>: Stripe, AWS, Alibaba Cloud — all use timestamps for request signing. One wrong digit and the entire request is rejected.</li>
+    </ul>
+
+    <h2>Timezones: The Bridge Between Timestamps and Local Time</h2>
+    <p>
+      A timestamp itself has no timezone — it's just UTC seconds. But humans need timezones. The same timestamp <code>1717766400</code>:
+    </p>
+    <ul>
+      <li>In UTC: 2024-06-08 00:00:00</li>
+      <li>In Beijing (UTC+8): 2024-06-08 08:00:00</li>
+      <li>In New York (UTC-4): 2024-06-07 20:00:00</li>
+    </ul>
+    <p>
+      <strong>This is why an online converter needs timezone support.</strong> You found a timestamp in an S3 access log, but you're in Beijing and want to know when it happened in your time — select UTC+8 and see the result in one click.
+    </p>
+
+    <div class="highlight">
+      <p>
+      Pro tip: Always store timestamps (or UTC) in your database. Format to local time only at the presentation layer. <strong>Never store timezone-formatted strings in your database</strong> — that's called "digging your own grave."
+      </p>
+    </div>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Try the converter now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">Seconds/milliseconds toggle, 18 timezones, ISO 8601, one-click copy</p>
+    <a href="../tools/timestamp.html" class="btn">🕐 Open Timestamp Converter</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: Why January 1, 1970?</h3>
+    <p>Unix was designed in the early 1970s, so January 1, 1970 was a convenient round-number starting point with no historical baggage. Some also say it was the birthday of a Unix developer's wife — but that's apocryphal.</p>
+
+    <h3>Q: What does a negative timestamp mean?</h3>
+    <p><code>-1</code> represents December 31, 1969, 23:59:59 UTC — a moment before the Unix Epoch. So timestamps can represent dates before 1970; 1950 would be a large negative number.</p>
+
+    <h3>Q: Is second precision enough?</h3>
+    <p>For 99% of applications — post times, logs, order creation — one-second precision is plenty. For high-frequency trading or performance profiling, use millisecond or nanosecond precision. JavaScript's <code>performance.now()</code> offers microsecond resolution.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

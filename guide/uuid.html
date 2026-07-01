@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UUID是什么？版本区别、碰撞概率与使用场景 - ToolForge</title>
+<meta name="description" content="一文看懂UUID：什么是UUID、v1/v4/v5版本区别、碰撞概率有多大、什么时候该用UUID。附在线UUID生成器，一键批量生成。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/uuid.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🆔 UUID 完全指南：全球唯一标识符</h1>
+    <p>从原理到实践，彻底搞懂 UUID 的所有版本和正确使用方式</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>什么是 UUID？</h2>
+    <p>
+      UUID 全称 <strong>Universally Unique Identifier</strong>（通用唯一标识符），是一个 128 位的数字，通常表示为 32 个十六进制字符加上 4 个连字符的格式：
+    </p>
+    <pre><code>550e8400-e29b-41d4-a716-446655440000</code></pre>
+    <p>
+      它的核心承诺是：<strong>你生成的每一个 UUID，在全世界范围内都是唯一的</strong>——不需要中央服务器来协调，不需要查重，生成即可用。这也是它被称为"通用"唯一标识符的原因。
+    </p>
+
+    <div class="highlight">
+      <strong>一句话：</strong>UUID 是一种不需要中央协调就能保证全局唯一的 ID 生成方案。分布式系统的标配。
+    </div>
+
+    <h2>UUID 的版本：v1、v4、v5 有什么区别？</h2>
+    <p>
+      UUID 有多个版本，每个版本的生成算法不同。实际开发中你只需要关注这三个：
+    </p>
+
+    <table>
+      <tr><th>版本</th><th>生成方式</th><th>特点</th><th>适用场景</th></tr>
+      <tr>
+        <td><strong>UUID v1</strong></td>
+        <td>基于时间戳 + MAC 地址</td>
+        <td>可排序、泄露机器信息</td>
+        <td>数据库主键（需要有序）、日志系统</td>
+      </tr>
+      <tr>
+        <td><strong>UUID v4</strong></td>
+        <td>纯随机数</td>
+        <td>完全随机、最常用</td>
+        <td>通用唯一 ID、Session ID、文件名</td>
+      </tr>
+      <tr>
+        <td><strong>UUID v5</strong></td>
+        <td>基于命名空间 + 名称的 SHA-1 哈希</td>
+        <td>确定性、相同输入得相同 UUID</td>
+        <td>从已有名称生成固定 UUID</td>
+      </tr>
+    </table>
+
+    <h3>UUID v1：看时间就知道谁生成的</h3>
+    <p>
+      UUID v1 的前半部分是<strong>时间戳</strong>，后半部分是<strong>机器 MAC 地址</strong>。好处是天然有序（数据库索引友好），坏处是隐私问题——别人拿到 UUID 就能反推你的 MAC 地址和生成时间。除非你需要有序 ID，否则不推荐 v1。
+    </p>
+
+    <h3>UUID v4：最流行的选择</h3>
+    <p>
+      UUID v4 除了 6 个固定位（标识版本号和变体），其余 122 位全部是<strong>随机生成的</strong>。这就是你日常见到的 UUID：
+    </p>
+    <pre><code>a3bb189e-8bf9-4388-b5d3-0af2a0b8e1d1</code></pre>
+    <p>
+      <strong>这就是我们在线工具生成的版本。</strong>绝大多数场景都应该用 v4——简单、安全、足够唯一。
+    </p>
+
+    <h3>UUID v5：确定性的 UUID</h3>
+    <p>
+      UUID v5 用 SHA-1 哈希算法，输入一个<strong>命名空间 UUID + 名称字符串</strong>，输出一个固定的 UUID。同一个输入永远得到同一个输出。适合"根据邮箱或 URL 生成固定 ID"的场景。
+    </p>
+
+    <h2>UUID 的碰撞概率：真的不会重复吗？</h2>
+    <p>
+      这是最常被问到的问题。UUID v4 有 122 位随机数，总共 <strong>2<sup>122</sup> ≈ 5.3 × 10<sup>36</sup></strong> 种可能。
+    </p>
+    <p>
+      根据生日悖论计算，要产生 50% 的碰撞概率，你需要<strong>每秒生成 10 亿个 UUID，连续生成 85 年</strong>——才有一半的概率会出现重复。
+    </p>
+
+    <div class="highlight">
+      <strong>结论：</strong>在实际系统中，UUID v4 碰撞的概率远低于你的服务器被陨石击中的概率。如果你真的遇到了 UUID 碰撞，先检查是不是随机数生成器有 Bug，再考虑去买彩票。
+    </div>
+
+    <h2>什么时候应该用 UUID？</h2>
+    <ul>
+      <li>🗄️ <strong>分布式数据库主键</strong>：多台服务器同时写入，不用等自增 ID 锁</li>
+      <li>📁 <strong>文件名唯一化</strong>：用户上传的文件，用 UUID 重命名避免冲突</li>
+      <li>🔗 <strong>公开 ID</strong>：URL 中用 UUID 比自增 ID（<code>/user/1038</code>）更安全，不会暴露数据量</li>
+      <li>🔑 <strong>Session / Token</strong>：用 UUID 做 Session ID 或临时 Token</li>
+      <li>📧 <strong>幂等键</strong>：支付、下单接口用 UUID 做幂等键，防止重复提交</li>
+      <li>🏷️ <strong>追踪 ID</strong>：分布式链路追踪中的 Trace ID 通常就是 UUID</li>
+    </ul>
+
+    <h2>UUID vs 自增 ID：怎么选？</h2>
+    <table>
+      <tr><th>方面</th><th>UUID</th><th>自增 ID</th></tr>
+      <tr><td>全局唯一</td><td>✅ 天然保证</td><td>❌ 需要中央协调</td></tr>
+      <tr><td>分布式友好</td><td>✅ 随处生成</td><td>❌ 需要锁或序列</td></tr>
+      <tr><td>存储空间</td><td>16 字节（128bit）</td><td>4-8 字节</td></tr>
+      <tr><td>索引性能</td><td>较差（随机写入）</td><td>优秀（顺序写入）</td></tr>
+      <tr><td>信息安全</td><td>✅ 不暴露总量</td><td>❌ 暴露数据量</td></tr>
+      <tr><td>可读性</td><td>差（一长串）</td><td>好（简短数字）</td></tr>
+    </table>
+    <p>
+      <strong>简单原则：</strong>单体应用、对性能敏感 → 自增 ID。分布式系统、需要公开暴露 → UUID。如果两样都想要，看看 <strong>ULID</strong> 或 <strong>Snowflake ID</strong>（有序且全局唯一）。
+    </p>
+
+    <h2>带横线还是不带横线？</h2>
+    <p>
+      UUID 标准格式带 4 个连字符：<code>550e8400-e29b-41d4-a716-446655440000</code>。实际存储时很多人会去掉横线变成 32 个字符：<code>550e8400e29b41d4a716446655440000</code>——节省 4 个字节，也方便数据库索引。
+    </p>
+    <p>
+      用我们的工具可以一键切换：<strong>勾选"保留横线"为标准格式，取消勾选为紧凑格式</strong>。
+    </p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就生成你的 UUID</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">一键生成 UUID v4，支持批量生成（1/5/10/20个），横线开关，一键复制</p>
+    <a href="../tools/uuid.html" class="btn">🆔 打开 UUID 生成器</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: UUID v4 的随机数是怎么生成的？</h3>
+    <p>浏览器中使用 <code>crypto.getRandomValues()</code>（密码学安全的伪随机数生成器），Node.js 中用 <code>crypto.randomBytes()</code>。都不是真正的"随机"，但对 UUID 生成来说安全性绰绰有余。</p>
+
+    <h3>Q: 为什么我看到 UUID 第三段总是以 4 开头？</h3>
+    <p>因为 <code>4</code> 是 UUID v4 的版本标识位。同样，第四段的第一个字符总是 <code>8</code>、<code>9</code>、<code>a</code> 或 <code>b</code>，这是变体标识位。如果你看到的 UUID 不是这个规律，那它就不是标准 UUID v4。</p>
+
+    <h3>Q: UUID 能当数据库主键吗？对性能有影响吗？</h3>
+    <p>可以，但有代价。UUID 的随机性会导致 B+Tree 索引的页分裂和碎片化，写入性能比自增 ID 差。如果必须用 UUID 做主键，建议使用 UUID v1（时间有序）或 ULID。MySQL 8.0+ 提供了 <code>UUID_TO_BIN()</code> 函数来优化 UUID 存储。</p>
+
+    <h3>Q: UUID 和 GUID 有什么区别？</h3>
+    <p>本质上是同一个东西。GUID（Globally Unique Identifier）是微软对 UUID 的叫法。技术上完全一致——128 位，相同的格式，相同的版本定义。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

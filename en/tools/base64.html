@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64 & URL Encoder/Decoder - ToolForge</title>
+<meta name="description" content="Free online Base64 and URL encoder/decoder. Supports Chinese characters, emoji and special characters. One-click copy.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html" class="active">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/base64.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🔐 Base64 & URL Encoder/Decoder</h1>
+    <p>Base64 and URL encoding/decoding. Supports Chinese, emoji and special characters.<br><a href="../guide/base64.html" style="font-size:0.85rem;color:var(--text-dim)">📖 What is Base64? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('base64-encode')">Base64 Encode</button>
+    <button class="tab-btn" onclick="switchTab('base64-decode')">Base64 Decode</button>
+    <button class="tab-btn" onclick="switchTab('url-encode')">URL Encode</button>
+    <button class="tab-btn" onclick="switchTab('url-decode')">URL Decode</button>
+  </div>
+
+  <div class="field" id="input-area">
+    <div class="label-row">
+      <label id="input-label">Input Text</label>
+      <button class="btn btn-sm" onclick="process()" id="action-btn">🔀 Encode</button>
+    </div>
+    <textarea id="text-input" placeholder="Enter text to encode..."></textarea>
+  </div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>Output</label>
+      <button class="btn btn-sm" onclick="copyOutput()">📋 Copy Result</button>
+    </div>
+    <textarea id="text-output" readonly placeholder="Result will appear here"></textarea>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+let currentTab = 'base64-encode';
+
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+
+  const labels = {
+    'base64-encode': ['Input Text', '🔀 Encode'],
+    'base64-decode': ['Input Base64 String', '🔓 Decode'],
+    'url-encode': ['Input Text', '🔀 Encode'],
+    'url-decode': ['Input URL-encoded String', '🔓 Decode'],
+  };
+  document.getElementById('input-label').textContent = labels[tab][0];
+  document.getElementById('action-btn').textContent = labels[tab][1];
+  document.getElementById('text-input').placeholder = labels[tab][0] + '...';
+  document.getElementById('text-output').value = '';
+  document.getElementById('text-input').value = '';
+}
+
+function process() {
+  const input = document.getElementById('text-input').value;
+  if (!input) return;
+
+  let output;
+  try {
+    switch(currentTab) {
+      case 'base64-encode':
+        output = btoa(unescape(encodeURIComponent(input)));
+        break;
+      case 'base64-decode':
+        output = decodeURIComponent(escape(atob(input)));
+        break;
+      case 'url-encode':
+        output = encodeURIComponent(input);
+        break;
+      case 'url-decode':
+        output = decodeURIComponent(input);
+        break;
+    }
+    document.getElementById('text-output').value = output;
+  } catch(e) {
+    document.getElementById('text-output').value = '⚠ Error: Unable to decode input. Please check the content.';
+  }
+}
+
+function copyOutput() {
+  const val = document.getElementById('text-output').value;
+  if (val && !val.startsWith('⚠')) copyToClipboard(val);
+}
+</script>
+
+</body>
+</html>

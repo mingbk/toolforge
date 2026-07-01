@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unix时间戳是什么？在线转换工具&使用场景 - ToolForge</title>
+<meta name="description" content="一文看懂Unix时间戳：什么是时间戳、为什么程序员都用它、秒和毫秒的区别、2038年问题。附在线转换工具，秒/毫秒切换、18个时区、一键复制。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/timestamp.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🕐 Unix时间戳：一个数字，搞定全球时间</h1>
+    <p>从零理解时间戳概念，掌握开发中最常用的时间表示方式</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>什么是Unix时间戳？</h2>
+    <p>
+      Unix时间戳就是<strong>从1970年1月1日00:00:00（UTC）到现在的总秒数</strong>。这个1970年1月1日被称为"Unix纪元"（Unix Epoch）——计算机世界的创世时刻。
+    </p>
+    <p>
+      比如时间戳 <code>1717766400</code>，翻译成人类能看懂的时间就是 2024年6月8日。全世界任何一台计算机拿到这个数字，都能还原出同一个时刻——不受时区、夏令时、语言的影响。
+    </p>
+
+    <div class="highlight">
+      <strong>一句话：</strong>时间戳把"时间"这个模糊概念变成了一个纯粹的整数——容易存储、容易比较、容易传输，没有时差歧义。
+    </div>
+
+    <h2>为什么程序员都用时间戳？</h2>
+
+    <h3>1. 无歧义</h3>
+    <p>
+      如果你说"6月8日下午3点"，德州的人和东京的人看到的是两个不同的时刻。但 <code>1717858800</code> 在任何地方都是同一个瞬间。数据库存时间戳而不是格式化日期，就不会出现"北京时间存进去，UTC读出来"的灾难。
+    </p>
+
+    <h3>2. 纯数字，天然可排序</h3>
+    <p>
+      时间戳的本质就是一个递增的整数。做日志查询的时候 <code>WHERE ts > 1717766400</code> 比 <code>WHERE date > '2024-06-08'</code> 快得多，而且不用处理日期格式转换。
+    </p>
+
+    <h3>3. 跨语言统一</h3>
+    <p>几乎所有编程语言都内置了时间戳支持：</p>
+    <table>
+      <tr><th>语言</th><th>获取当前时间戳（秒）</th></tr>
+      <tr><td>JavaScript</td><td><code>Math.floor(Date.now() / 1000)</code></td></tr>
+      <tr><td>Python</td><td><code>import time; time.time()</code></td></tr>
+      <tr><td>Go</td><td><code>time.Now().Unix()</code></td></tr>
+      <tr><td>Java</td><td><code>System.currentTimeMillis() / 1000</code></td></tr>
+      <tr><td>Shell</td><td><code>date +%s</code></td></tr>
+    </table>
+
+    <h2>秒 vs 毫秒：别搞混了</h2>
+    <p>
+      这是新手最容易踩的坑。时间戳有两种常见精度：
+    </p>
+    <ul>
+      <li><strong>秒级时间戳</strong>（10位）：<code>1717766400</code> — 传统Unix标准，数据库常用</li>
+      <li><strong>毫秒级时间戳</strong>（13位）：<code>1717766400000</code> — JavaScript的 <code>Date.now()</code> 直接返回的就是毫秒</li>
+    </ul>
+    <p>
+      判断技巧：<strong>10位 = 秒，13位 = 毫秒</strong>。如果你的API文档说"传时间戳"但不说是秒还是毫秒——大概率是秒。如果传错了，你的时间会变成1970年或者2040年，一眼就能看出来。
+    </p>
+
+    <h2>2038年问题：时间戳会溢出吗？</h2>
+    <p>
+      32位系统用 <code>int32</code> 存时间戳，最大值是 <code>2147483647</code>，对应 2038年1月19日03:14:07。过了这一刻，整数溢出变成负数，时间倒退回1901年。这就是著名的<strong>2038年问题（Y2K38）</strong>。
+    </p>
+    <p>
+      现实影响？1970年至今已经走过大半路程。如果你的设备是64位系统（2010年后的手机和电脑基本都是），不存在这个问题——64位时间戳能用到宇宙热寂。但如果你的嵌入式设备、老路由器、工控系统还在跑32位——2038年1月19日见。
+    </p>
+
+    <h2>实际场景：你什么时候需要时间戳转换？</h2>
+    <ul>
+      <li>🔍 <strong>查日志</strong>：服务器日志里全是时间戳，1780906800 是几点？</li>
+      <li>📊 <strong>数据分析</strong>：Excel打开CSV，订单创建时间是一长串数字——需要批量转换成日期</li>
+      <li>👥 <strong>跨国协作</strong>：你的同事在旧金山，你在北京，数据库里只有一个时间戳——你要知道分别对应几点</li>
+      <li>🔗 <strong>URL参数</strong>：很多网站分享链接里藏了时间戳，方便做缓存校验</li>
+      <li>🧪 <strong>API调试</strong>：微信支付、阿里云都要求用时间戳做签名，签错了一位整个请求被拒</li>
+    </ul>
+
+    <h2>时区：时间戳和本地时间的桥梁</h2>
+    <p>
+      时间戳本身不带时区信息——它就是UTC秒数。但人类看时间需要时区。同一个时间戳 <code>1717766400</code>：
+    </p>
+    <ul>
+      <li>在UTC时区显示：2024-06-08 00:00:00</li>
+      <li>在北京（UTC+8）显示：2024-06-08 08:00:00</li>
+      <li>在纽约（UTC-4）显示：2024-06-07 20:00:00</li>
+    </ul>
+    <p>
+      <strong>这就是为什么在线转换工具要支持多时区。</strong> 你知道这个时间戳是亚马逊S3日志里的，但你人在北京，要查是北京时间几点——选中 UTC+8，一秒出结果。
+    </p>
+
+    <div class="highlight">
+      <p>
+      专业提示：数据库永远存时间戳（或UTC时间），前端展示时再根据用户时区格式化。<strong>不要在数据库里存带时区的格式化字符串</strong>——那个叫"给自己埋雷"。
+      </p>
+    </div>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就试试在线转换</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">支持秒/毫秒切换、18个时区、ISO 8601、一键复制</p>
+    <a href="../tools/timestamp.html" class="btn">🕐 打开时间戳转换工具</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: 为什么选1970年1月1日？</h3>
+    <p>Unix在1970年代初设计，1970年1月1日是一个方便的"整数起点"。当时没有历史包袱，取个整点当零时刻。也有说法是那天是Unix开发者Ken Thompson妻子的生日——但这不是重点。</p>
+
+    <h3>Q: 负数时间戳是什么意思？</h3>
+    <p><code>-1</code> 表示 1969年12月31日23:59:59 UTC——也就是1970年之前的时刻。所以理论上Unix时间戳可以表示"Unix纪元之前"的时间，比如1950年的某个日期就是负数时间戳。</p>
+
+    <h3>Q: 时间戳的精度够用吗？</h3>
+    <p>秒级时间戳精度1秒，对99%的应用场景足够了（发帖时间、日志、订单创建时间）。需要更高精度的场景（高频交易、性能分析）用毫秒级或纳秒级。JavaScript的 <code>performance.now()</code> 精度可以达到微秒。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

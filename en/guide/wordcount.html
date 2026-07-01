@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Count Guide: Chinese Characters, English Words & Mixed Text - ToolForge</title>
+<meta name="description" content="Chinese and English word counting work completely differently. Learn how character count, word count, CJK counting, and mixed-text counting actually work — with free online tool.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/wordcount.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>📝 Word Counting: How Chinese, English, and Mixed Text Actually Work</h1>
+    <p>Don't assume "counting" is simple — Chinese and English use fundamentally different counting logic</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>Characters, Words, and "Character Count" — Three Different Things</h2>
+    <p>
+      Many people confuse "characters" with "words" when using a word counter. In English this distinction barely matters. In Chinese — <strong>it's everything</strong>.
+    </p>
+    <ul>
+      <li><strong>Character Count</strong>: Every visible symbol counts as one character. Letters, Chinese characters, punctuation, spaces, line breaks — all of them. <code>"Hello 你好"</code> has 8 characters (H-e-l-l-o-space-你-好).</li>
+      <li><strong>Word Count</strong>: The tricky one. English splits on whitespace — <code>"Hello world"</code> is 2 words. But Chinese has no spaces — <strong>each character is effectively a "word"</strong>.</li>
+      <li><strong>Characters (no spaces)</strong>: Character count minus all whitespace. Used for scenarios that need precise counting (e.g., SMS billing).</li>
+    </ul>
+
+    <div class="highlight">
+      <strong>Core difference:</strong> English counts <em>words</em>; Chinese counts <em>characters as words</em>. <code>"I love coding"</code> = 3 words; <code>"我爱编程"</code> = 4 characters/words.
+    </div>
+
+    <h2>CJK vs. Latin Script: Two Completely Different Counting Paradigms</h2>
+    <p>
+      CJK (Chinese, Japanese, Korean) characters are <strong>logographic</strong> — each character represents a complete unit of meaning on its own. Latin scripts (English, French, Spanish, etc.) are <strong>alphabetic</strong> — letters must be strung together with spaces to form meaningful words.
+    </p>
+
+    <h3>CJK Counting Rules</h3>
+    <p>
+      Chinese, Japanese, and Korean don't really have a "word" concept in the same way (Korean uses spaces but counting is typically character-based). One hanzi, one kana, one hangul syllable = one unit when counting.
+    </p>
+    <pre><code>// Chinese: each hanzi is one "word"
+"今天天气真好" → Chinese characters: 6
+
+// Japanese: kana and kanji both count
+"今日は天気がいい" → character count: 9</code></pre>
+
+    <h3>Latin Script Counting Rules</h3>
+    <p>
+      English and similar languages split on whitespace. But there are edge cases everywhere:
+    </p>
+    <ul>
+      <li><strong>Hyphenated words</strong>: <code>"state-of-the-art"</code> — 1 word or 4? Most tools count it as 1.</li>
+      <li><strong>Abbreviations</strong>: <code>"I.T. support"</code> — those dots make tokenization tricky.</li>
+      <li><strong>Apostrophes</strong>: <code>"don't"</code> counts as 1 word, <code>"it's"</code> as 1 word.</li>
+      <li><strong>Numbers</strong>: <code>"1,000 dollars"</code> — <code>1,000</code> counts as 1 word.</li>
+    </ul>
+
+    <h2>Mixed-Text Counting: Where Things Get Messy</h2>
+    <p>
+      Real-world text is often Chinese-English mixed. For example:
+    </p>
+    <pre><code>"我们使用 Python 和 Rust 来构建 API 服务"</code></pre>
+    <p>
+      It contains Chinese ("我们使用", "来构建", "服务"), English words ("Python", "Rust"), and abbreviations ("API"). Pure whitespace splitting would collapse the Chinese into one giant blob; pure character counting would shred the English words into individual letters.
+    </p>
+    <p>
+      <strong>The Word Counter's hybrid strategy:</strong> First extract all Chinese characters using the regex range <code>[\u4e00-\u9fff]</code> and count them separately. Then split remaining text on whitespace for English word counting, filtering out pure-Chinese segments. So <code>"我愛 Python 编程"</code> is counted as: 4 Chinese characters + 1 English word.
+    </p>
+
+    <div class="highlight">
+      <strong>Practical tip:</strong> If you're submitting articles, writing academic papers, or doing SEO content — <strong>track Chinese character count and English word count separately</strong>. Most platforms' "word count requirements" refer to Chinese characters; English words are roughly converted (typically 1 English word ≈ 2 Chinese characters).
+    </div>
+
+    <h2>When Do You Need a Word Counter?</h2>
+
+    <h3>1. Writing & Submissions</h3>
+    <p>
+      WeChat article character limits? Paper abstract word limits? Essay contest requiring 800 words? <strong>Paste it in, instant result.</strong> Ten times faster than digging through Word's word count dialog.
+    </p>
+
+    <h3>2. SEO Content Optimization</h3>
+    <p>
+      Google and Baidu both favor "substantial" pages. A common benchmark: <strong>1,500+ words</strong>. A word counter helps you quickly gauge whether your content is "thick enough."
+    </p>
+
+    <h3>3. Translation Pricing</h3>
+    <p>
+      The translation industry typically prices by "source language word count." Chinese → English is priced by Chinese character count; English → Chinese is priced by English word count. Drop the text in, get your pricing basis in three seconds.
+    </p>
+
+    <h3>4. Social Media Posts</h3>
+    <p>
+      Twitter/X's 280-character limit, Weibo's 2,000-character long posts, Xiaohongshu's body text limits — every platform has different rules. Paste and check before you post.
+    </p>
+
+    <h3>5. Programming & Data Processing</h3>
+    <p>
+      User input validation, log length checks, API payload size estimation — character counting is the most fundamental need. <code>str.length</code> doesn't always equal the "word count" you want.
+    </p>
+
+    <h2>Lines and Paragraphs: More Than Just Newlines</h2>
+    <p>
+      Lines are split by newline characters (<code>\n</code>). Paragraphs are split by <strong>blank lines</strong> (two consecutive newlines).
+    </p>
+    <pre><code>This is the first paragraph.
+Still the first paragraph.
+
+This is the second paragraph.
+Separated by a blank line.</code></pre>
+    <p>
+      The text above: <strong>4 lines, 2 paragraphs</strong>.
+    </p>
+
+    <div class="highlight">
+      <p>
+        <strong>Note:</strong> Paragraph splitting uses the "at least one blank line" rule. If you use <code>&lt;br&gt;</code> for line breaks (single newline, not double), it won't be recognized as a new paragraph in plain text counting. In Markdown, two newlines equal one paragraph separator.
+      </p>
+    </div>
+
+    <h2>Why Use an Online Word Counter Instead of Word?</h2>
+    <ul>
+      <li>⚡ <strong>Instant</strong>: No need to launch a heavyweight word processor — works in a browser tab.</li>
+      <li>🔒 <strong>Client-side</strong>: Your text never leaves your browser. Privacy guaranteed.</li>
+      <li>📋 <strong>One-click paste</strong>: Copy from anywhere, click paste, results appear instantly.</li>
+      <li>🔄 <strong>Real-time</strong>: Numbers update as you type — no need to click a "count" button.</li>
+      <li>🌐 <strong>Cross-platform</strong>: Phone, tablet, desktop — works anywhere with a browser.</li>
+    </ul>
+
+    <h2>FAQ</h2>
+    <h3>Q: Do punctuation marks count as characters?</h3>
+    <p>Punctuation counts toward character count, but does not affect "word count" or "Chinese character count."</p>
+
+    <h3>Q: Do spaces count as characters?</h3>
+    <p>Yes. That's why you see two metrics — "Total Characters" and "Characters (no spaces)." The difference equals the amount of whitespace in your text.</p>
+
+    <h3>Q: How is mixed Chinese-English text counted?</h3>
+    <p>Separately: Chinese characters and English words are displayed as distinct metrics. You can add them up however you need.</p>
+
+    <h3>Q: Why does my Chinese text show a non-zero "English Words" count?</h3>
+    <p>If you've entered spaces, numbers, or English punctuation — those get split on whitespace and counted as "words." This is expected: in mixed text, any non-CJK token is counted as a word.</p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Try the online word counter now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">Paste text to see real-time Chinese characters, English words, character count, lines, and paragraphs</p>
+    <a href="../tools/wordcount.html" class="btn">📝 Open Word Counter</a>
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation runs locally in your browser — no data is ever uploaded</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

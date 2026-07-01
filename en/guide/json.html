@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is JSON? Format, Validate & Use Cases Guide - ToolForge</title>
+<meta name="description" content="A complete guide to JSON: what it is, why you need formatting and validation, common use cases (API debugging, config files, data exchange), and syntax rules. Includes free online JSON formatter.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/json.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>📋 JSON: The Complete Guide</h1>
+    <p>From syntax to real-world use — master the universal data format</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>What Is JSON?</h2>
+    <p>
+      JSON stands for <strong>JavaScript Object Notation</strong>. It's a <strong>lightweight, plain-text data interchange format</strong>. It represents structured data in a human-readable way and is the most universal data format in modern web development.
+    </p>
+    <p>
+      Here's a JSON snippet describing a user:
+    </p>
+    <pre><code>{
+  "name": "Alice",
+  "age": 28,
+  "email": "alice@example.com",
+  "tags": ["frontend", "React"]
+}</code></pre>
+    <p>
+      This format is friendly to both humans and machines — you can read it directly, and programs can parse it instantly.
+    </p>
+
+    <div class="highlight">
+      <strong>TL;DR:</strong> JSON is a "key-value + arrays" text format for data. Every programming language can read and write it — it's the lingua franca of data exchange.
+    </div>
+
+    <h2>Why Format and Validate JSON?</h2>
+
+    <h3>1. Minified JSON Is Unreadable</h3>
+    <p>
+      APIs often return minified (compact) JSON to save bandwidth:
+    </p>
+    <pre><code>{"code":200,"data":{"users":[{"id":1,"name":"Alice"}]}}</code></pre>
+    <p>
+      After formatting, it becomes instantly clear:
+    </p>
+    <pre><code>{
+  "code": 200,
+  "data": {
+    "users": [
+      { "id": 1, "name": "Alice" }
+    ]
+  }
+}</code></pre>
+    <p>
+      <strong>Formatting = indentation + line breaks + syntax highlighting.</strong> You can see the data structure at a glance.
+    </p>
+
+    <h3>2. One Trailing Comma Can Break Everything</h3>
+    <p>
+      JSON syntax is strict. A single mistake causes parse failure. Common errors:
+    </p>
+    <ul>
+      <li>❌ Trailing comma after last element: <code>{"a": 1, "b": 2,}</code></li>
+      <li>❌ Unquoted keys: <code>{name: "Alice"}</code></li>
+      <li>❌ Single quotes instead of double: <code>{'name': 'Alice'}</code></li>
+      <li>❌ Missing quotes or mismatched brackets</li>
+    </ul>
+    <p>
+      A validator <strong>tells you exactly what's wrong in real time</strong>, so you catch errors before deploying.
+    </p>
+
+    <h2>JSON Syntax Rules Quick Reference</h2>
+    <table>
+      <tr><th>Rule</th><th>Description</th><th>Example</th></tr>
+      <tr><td>Structure</td><td>Key-value pairs; keys must be double-quoted</td><td><code>"name": "Alice"</code></td></tr>
+      <tr><td>Strings</td><td>Double quotes only (no single quotes)</td><td><code>"hello"</code></td></tr>
+      <tr><td>Numbers</td><td>Integer or float, no quotes</td><td><code>42</code>, <code>3.14</code>, <code>-1</code></td></tr>
+      <tr><td>Booleans</td><td>Lowercase, no quotes</td><td><code>true</code>, <code>false</code></td></tr>
+      <tr><td>Null</td><td>Lowercase <code>null</code></td><td><code>null</code></td></tr>
+      <tr><td>Arrays</td><td>Square brackets, comma-separated</td><td><code>[1, 2, 3]</code></td></tr>
+      <tr><td>Objects</td><td>Curly braces, comma-separated pairs</td><td><code>{"a": 1, "b": 2}</code></td></tr>
+      <tr><td>Nesting</td><td>Objects and arrays can nest arbitrarily</td><td><code>{"items": [{"id": 1}]}</code></td></tr>
+      <tr><td>Comments</td><td>❌ JSON does not support comments</td><td>Use JSONC or YAML for comments</td></tr>
+    </table>
+
+    <h2>Common JSON Use Cases</h2>
+
+    <h3>🔌 API Debugging</h3>
+    <p>
+      Nearly every REST API today uses JSON. When you call an endpoint with <code>curl</code> or Postman, you get JSON back. The first thing you do with a wall of minified JSON is <strong>format it</strong> — otherwise you'll never figure out which nesting level holds <code>data.users[5].address.city</code>.
+    </p>
+
+    <h3>⚙️ Configuration Files</h3>
+    <p>
+      <code>package.json</code>, VSCode's <code>settings.json</code>, ESLint's <code>.eslintrc.json</code> — JSON is the default config format in the JavaScript ecosystem. A malformed config file can prevent your entire project from running.
+    </p>
+
+    <h3>📦 Data Exchange</h3>
+    <p>
+      In a decoupled frontend-backend architecture, the frontend sends JSON to the backend and the backend returns JSON. When different languages (Java ↔ Python ↔ Go) need to share data, serializing to JSON strings is the standard approach.
+    </p>
+
+    <h3>🗄️ Databases</h3>
+    <p>
+      PostgreSQL has a native <code>JSONB</code> column type, MongoDB documents are essentially JSON (BSON), and Redis's JSON module makes JSON a standard cache format.
+    </p>
+
+    <h2>Format vs Minify: When to Use Which?</h2>
+    <p>
+      <strong>Format</strong>: During development, debugging, writing config files, sharing with colleagues — you need readability.<br>
+      <strong>Minify</strong>: For production transport, database storage, URL parameters — you need to save bytes.
+    </p>
+
+    <div class="highlight">
+      <strong>Pro tip:</strong> Use our online tool — format to inspect structure, minify for production, switch in one click. All computation happens locally in your browser; your data never leaves your machine.
+    </div>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Format your JSON now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">Syntax highlighting, real-time validation, one-click minify, formatted copy</p>
+    <a href="../tools/json.html" class="btn">📋 Open JSON Formatter</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: What's the difference between JSON and a JavaScript object?</h3>
+    <p>JSON is a plain-text format; a JavaScript object is an in-memory data structure. JSON keys must be double-quoted, and you can't include functions, <code>undefined</code>, or <code>NaN</code>. Use <code>JSON.parse()</code> to convert a JSON string into a JavaScript object.</p>
+
+    <h3>Q: Why do I get "Unexpected token" when parsing JSON?</h3>
+    <p>99% of the time it's: a trailing comma, single quotes, unquoted keys, or invisible characters from copy-paste. Paste your content into a formatter — it will highlight the error location.</p>
+
+    <h3>Q: Does JSON support Chinese characters?</h3>
+    <p>Yes, fully. JSON string values can contain any Unicode character — Chinese, Japanese, emoji. No escaping needed: <code>"message": "Hello world 🌍"</code>.</p>
+
+    <h3>Q: How deep can JSON nest?</h3>
+    <p>No theoretical limit, but browsers and parsers usually enforce a default nesting depth (typically 100–1000 levels). In practice, if your data is nested deeper than 5 levels, it's time to refactor.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

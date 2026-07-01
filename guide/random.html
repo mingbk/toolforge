@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>随机字符串生成原理：crypto.getRandomValues vs Math.random - ToolForge</title>
+<meta name="description" content="深入理解随机字符串生成：crypto.getRandomValues 和 Math.random 的本质区别、为什么密码生成必须用加密级随机数、如何选择字符集。附在线生成工具。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/random.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🎲 随机字符串生成：真随机 vs 伪随机</h1>
+    <p>从原理到实践，理解加密级随机数的真正含义</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>为什么需要"真"随机？</h2>
+    <p>
+      写一个随机字符串生成器很简单——但写一个<strong>安全的</strong>随机字符串生成器，就不是随便调个 <code>Math.random()</code> 能搞定的了。如果你生成的随机字符串是用来做密码重置 Token、验证码、API Key —— 那攻击者能预测"随机"结果的话，就等于拿到了你系统的钥匙。
+    </p>
+
+    <div class="highlight">
+      <strong>核心区别：</strong><code>Math.random()</code> 是"看起来随机"的伪随机数生成器（PRNG）；<code>crypto.getRandomValues()</code> 是密码学安全的真随机数生成器（CSPRNG）。前者快但可预测，后者慢但不可能被预测。
+    </div>
+
+    <h2>Math.random()：为什么不够安全？</h2>
+
+    <h3>工作原理</h3>
+    <p>
+      <code>Math.random()</code> 使用的是伪随机数生成器（通常是 xorshift128+ 算法）。它从一个初始"种子"（seed）开始，通过数学公式不断生成下一个数。给定相同的种子，就会产生完全相同的随机数序列。
+    </p>
+
+    <h3>三个致命弱点</h3>
+    <ul>
+      <li><strong>可预测性：</strong>攻击者如果能猜出种子（比如用当前时间戳做种子），就能重现整个随机序列</li>
+      <li><strong>状态可恢复：</strong>攻击者拿到连续的几个随机数输出，就可以反推内部状态，预测未来输出</li>
+      <li><strong>设计目的不同：</strong>V8 引擎的 <code>Math.random()</code> 优化目标是速度和分布均匀性，不是安全性</li>
+    </ul>
+
+    <pre><code>// ❌ 不要用 Math.random() 生成安全令牌！
+function unsafeToken(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}</code></pre>
+
+    <h2>crypto.getRandomValues()：密码学安全随机</h2>
+
+    <h3>工作原理</h3>
+    <p>
+      <code>crypto.getRandomValues()</code> 是 Web Crypto API 提供的密码学安全随机数生成器。它从操作系统底层获取<strong>真正的熵源</strong>——鼠标移动、键盘时序、硬盘中断、网络包到达时间等硬件级别的随机事件，是不可预测的。
+    </p>
+
+    <h3>为什么它安全？</h3>
+    <ul>
+      <li><strong>真熵源：</strong>不是数学公式算出来的，而是从物理世界采集的随机性</li>
+      <li><strong>不可逆推：</strong>拿到输出也无法反推内部状态或预测未来值</li>
+      <li><strong>不可被播种：</strong>没有"种子"概念，无法复现</li>
+      <li><strong>浏览器原生支持：</strong>所有现代浏览器都内置了，无需任何依赖</li>
+    </ul>
+
+    <pre><code>// ✅ 使用 crypto.getRandomValues() 生成安全令牌
+function safeToken(len) {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  let result = '';
+  for (let i = 0; i < len; i++) {
+    result += chars[arr[i] % chars.length];
+  }
+  return result;
+}</code></pre>
+
+    <table>
+      <tr><th>特性</th><th>Math.random()</th><th>crypto.getRandomValues()</th></tr>
+      <tr><td>类型</td><td>PRNG（伪随机）</td><td>CSPRNG（加密级随机）</td></tr>
+      <tr><td>可预测性</td><td>可预测</td><td>不可预测</td></tr>
+      <tr><td>熵源</td><td>数学算法 + 种子</td><td>操作系统硬件熵</td></tr>
+      <tr><td>速度</td><td>极快</td><td>较快（有熵池限制）</td></tr>
+      <tr><td>适用场景</td><td>游戏、动画、A/B测试</td><td>密码、Token、加密密钥</td></tr>
+      <tr><td>是否线程安全</td><td>是</td><td>是</td></tr>
+    </table>
+
+    <h2>实际场景：你什么时候需要加密级随机？</h2>
+    <ul>
+      <li>🔑 <strong>生成 API Key / Access Token：</strong>随便用 Math.random() 等于把钥匙送给攻击者</li>
+      <li>📧 <strong>密码重置链接：</strong>Token 可预测 = 任意用户账号可被接管</li>
+      <li>🎫 <strong>优惠码/邀请码：</strong>如果能猜出规律，优惠券会被薅光</li>
+      <li>🎮 <strong>游戏内的"随机"掉落（不重要）：</strong>用 Math.random() 完全没问题</li>
+      <li>🆔 <strong>唯一ID生成：</strong>如果你用 UUID v4，它底层已经用了 crypto</li>
+    </ul>
+
+    <h2>取模偏差（Modulo Bias）问题</h2>
+    <p>
+      即使用了 <code>crypto.getRandomValues()</code>，用取模 <code>arr[i] % charset.length</code> 来选字符，理论上存在<strong>取模偏差</strong>。比如 <code>Uint32</code> 范围是 0~4294967295，如果字符集长度不能整除这个范围，某些字符出现的概率就会略高。
+    </p>
+    <p>
+      <strong>实际上：</strong>当字符集长度远小于 2³² 时，偏差微乎其微（< 0.0000001%），对绝大多数场景没有实际影响。如果要求极致均匀，可以改用拒绝采样法（rejection sampling），但对日常使用来说，取模已经足够。
+    </p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就生成一个安全的随机字符串</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">支持自定义长度、大小写字母、数字、特殊符号，使用 crypto.getRandomValues</p>
+    <a href="../tools/random.html" class="btn">🎲 打开随机字符串生成器</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: crypto.getRandomValues 会耗尽随机数吗？</h3>
+    <p>操作系统维护了一个"熵池"（entropy pool），持续从硬件事件中收集随机性。普通应用几乎不可能耗尽它。浏览器内一次调用最多生成 65536 字节，完全够用。如果需要大量随机数，可以分批调用。</p>
+
+    <h3>Q: Node.js 里有 crypto.getRandomValues 吗？</h3>
+    <p>有！Node.js 的 <code>crypto</code> 模块提供了 <code>crypto.randomBytes()</code>（传统 API）和 <code>crypto.getRandomValues()</code>（Web 兼容 API）。两者都使用操作系统的 CSPRNG，是完全安全的。</p>
+
+    <h3>Q: Math.random() 真的那么容易被破解吗？</h3>
+    <p>对于 V8 引擎的 xorshift128+ 实现，攻击者只需要观察到大约 3-4 个连续的 <code>Math.random()</code> 输出值（64位浮点数），就能通过 Z3 求解器反推出内部状态。2018 年已经有公开的 PoC 攻击代码。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

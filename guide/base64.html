@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Base64是什么？编码原理、使用场景与在线工具 - ToolForge</title>
+<meta name="description" content="一文看懂Base64编码：什么是Base64、为什么要用Base64（邮件、Data URI、API Token）、编码vs加密的本质区别。附在线Base64编解码工具。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/base64.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🔐 Base64 编码：原理、场景与常见误区</h1>
+    <p>从零理解 Base64，搞清楚它是什么、为什么用、以及它不是加密</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>什么是 Base64 编码？</h2>
+    <p>
+      Base64 是一种<strong>用 64 个可打印字符（A-Z、a-z、0-9、+、/）来表示任意二进制数据</strong>的编码方式。它的核心作用很简单：把不可读的二进制数据变成可读可传的文本。
+    </p>
+    <p>
+      举个直观的例子——"Hello" 这个单词经过 Base64 编码变成 <code>SGVsbG8=</code>。解码后还原为 "Hello"。编码过程是把每 3 个字节（24 bits）拆成 4 个 6-bit 的组，每组映射到 64 字符集中的一个字符。
+    </p>
+
+    <div class="highlight">
+      <strong>一句话总结：</strong>Base64 不是加密算法，它只是把二进制数据"翻译"成文本。就像把一段话从一种方言翻译成另一种——没有任何保密性，任何人都能"翻译"回来。
+    </div>
+
+    <h2>为什么需要 Base64？</h2>
+
+    <h3>1. 解决"不可打印字符"的问题</h3>
+    <p>
+      很多传输协议（如 SMTP 邮件）最初是为纯文本设计的，遇到二进制数据（图片、附件、加密签名）就会出问题——因为二进制里包含了控制字符和不可打印字节。Base64 把二进制变成纯 ASCII 文本，<strong>所有协议都能安全传输</strong>。
+    </p>
+
+    <h3>2. Data URI：把图片写进 HTML</h3>
+    <p>
+      你可能见过这种写法：
+    </p>
+    <pre><code>&lt;img src="data:image/png;base64,iVBORw0KGgo..."&gt;</code></pre>
+    <p>
+      这就是 Base64 的经典应用——把小图片直接编码成字符串内联到 HTML 或 CSS 中，<strong>减少 HTTP 请求</strong>。适合图标、Logo 等小文件，但不适合大图（Base64 会让体积膨胀约 33%）。
+    </p>
+
+    <h3>3. API Token 和认证头</h3>
+    <p>
+      HTTP Basic Auth 把 <code>username:password</code> 做 Base64 编码后放在 <code>Authorization</code> 头里。很多 API 的 Token 也是 Base64 编码的 JSON 数据。你解码一个 JWT 的中间部分，看到的就是 Base64 编码的用户信息。
+    </p>
+
+    <h3>4. URL 安全传输</h3>
+    <p>
+      Base64 标准版里的 <code>+</code>、<code>/</code>、<code>=</code> 在 URL 中有特殊含义，不适合直接放链接里。所以有了 <strong>Base64URL</strong> 变体——把 <code>+</code> 换成 <code>-</code>，<code>/</code> 换成 <code>_</code>，去掉末尾的 <code>=</code>。
+    </p>
+
+    <h2>Base64 编码 vs 加密：这不是一回事</h2>
+    <p>
+      这是最常见的误解。很多人以为 Base64 "加密"了数据，实际上：
+    </p>
+    <table>
+      <tr><th>特性</th><th>Base64 编码</th><th>加密（AES/RSA）</th></tr>
+      <tr><td>需要密钥？</td><td>❌ 不需要</td><td>✅ 需要密钥</td></tr>
+      <tr><td>可逆吗？</td><td>✅ 任何人都能解码</td><td>只有掌握密钥的人能解密</td></tr>
+      <tr><td>目的</td><td>让二进制数据可传输</td><td>保护数据机密性</td></tr>
+      <tr><td>安全性</td><td>零安全，公开算法</td><td>依赖密钥强度</td></tr>
+      <tr><td>体积变化</td><td>增大约 33%</td><td>基本不变或略增</td></tr>
+    </table>
+    <p>
+      <strong>Base64 是编码（Encoding），不是加密（Encryption）。</strong>如果有人跟你说"用 Base64 加密一下密码"，你应该立刻纠正他——那跟把密码写纸上贴显示器上没区别。
+    </p>
+
+    <h2>Base64 的实际应用场景</h2>
+    <ul>
+      <li>📧 <strong>邮件附件</strong>：MIME 标准用 Base64 编码附件内容</li>
+      <li>🖼️ <strong>网页小图标</strong>：Data URI 内联 Base64 图片，省 HTTP 请求</li>
+      <li>🔑 <strong>JWT Token</strong>：JSON Web Token 的 payload 就是 Base64URL 编码</li>
+      <li>📄 <strong>配置文件嵌入</strong>：Kubernetes Secret、Docker Config 中嵌入证书和密钥文件</li>
+      <li>🔗 <strong>URL 参数</strong>：把复杂数据编码后放 URL，避免特殊字符问题</li>
+      <li>📦 <strong>前端打包</strong>：Webpack 等构建工具把小于一定大小的图片转 Base64 内联</li>
+    </ul>
+
+    <h2>编码和解码：什么时候用？</h2>
+    <p>
+      <strong>编码</strong>：你要发送一段文本或二进制数据到只支持 ASCII 的通道——邮件、URL、HTTP Header。<br>
+      <strong>解码</strong>：你收到了一段 Base64 字符串，需要把它还原成原始数据——比如调试 JWT、查看邮件附件内容。
+    </p>
+
+    <div class="highlight">
+      <strong>实用技巧：</strong>看到字符串以 <code>=</code> 或 <code>==</code> 结尾？大概率是 Base64。<code>=</code> 是 Base64 的填充符——当原始数据长度不是 3 的倍数时补上的。
+    </div>
+
+    <h2>URL 编码：Base64 的好搭档</h2>
+    <p>
+      URL 编码（也叫百分号编码）解决的问题和 Base64 类似但场景不同：URL 编码把 URL 中的<strong>特殊字符</strong>（如空格、中文、<code>&</code>）转成 <code>%XX</code> 的形式。比如空格变成 <code>%20</code>，"你好" 变成 <code>%E4%BD%A0%E5%A5%BD</code>。
+    </p>
+    <p>
+      二者经常搭配使用：先把 JSON 数据做 Base64 编码，再做 URL 编码放进链接参数里——接收端反过来操作即可。
+    </p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就试试编解码</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">支持 Base64 编解码 + URL 编解码，中文、emoji、特殊字符完美支持</p>
+    <a href="../tools/base64.html" class="btn">🔐 打开 Base64 编解码工具</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: 为什么 Base64 编码后比原文长？</h3>
+    <p>Base64 把每 3 个字节（24 bits）编码成 4 个 ASCII 字符，所以编码后的长度约为原始长度的 133%——多了大约 1/3。这是为了可传输性付出的空间代价。</p>
+
+    <h3>Q: Base64 编码后的 <code>=</code> 是什么意思？</h3>
+    <p><code>=</code> 是填充符（padding）。原始数据长度不是 3 的倍数时，编码器会在末尾补一个或两个 <code>=</code> 来确保长度是 4 的倍数。解码时必须保留或正确处理这些等号，否则会出错。</p>
+
+    <h3>Q: Base64 能编码中文吗？</h3>
+    <p>Base64 编码的是<strong>字节</strong>，不是字符。中文先通过 UTF-8 转换成字节序列，再对这些字节做 Base64 编码。所以 "你好" 先转成 6 个字节（UTF-8），再编码成 8 个 Base64 字符。</p>
+
+    <h3>Q: Base64 和 Base64URL 有什么区别？</h3>
+    <p>Base64URL 是 Base64 的 URL 安全变体：<code>+</code> → <code>-</code>，<code>/</code> → <code>_</code>，去掉末尾 <code>=</code>。适合放在 URL 参数、JWT Token 等场景中。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

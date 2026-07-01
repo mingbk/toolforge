@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AES Encryption/Decryption - ToolForge</title>
+<meta name="description" content="Online AES-GCM encryption and decryption tool. All computation happens locally in your browser — your keys never leave your device.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+    <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html" class="active">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/aes.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🔒 AES Encryption / Decryption</h1>
+    <p>AES-GCM 256-bit encryption. All computation happens locally in your browser — your keys are never uploaded.<br><a href="../guide/aes.html" style="font-size:0.85rem;color:var(--text-dim)">📖 How does AES-256-GCM work? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('encrypt')">🔐 Encrypt</button>
+    <button class="tab-btn" onclick="switchTab('decrypt')">🔓 Decrypt</button>
+  </div>
+
+  <!-- Encrypt tab -->
+  <div id="tab-encrypt">
+    <div class="field">
+      <div class="label-row"><label>Key / Password</label></div>
+      <input type="text" id="enc-key" placeholder="Enter encryption password (any length, 8+ characters recommended)" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <div class="label-row"><label>Plaintext</label></div>
+      <textarea id="enc-plaintext" placeholder="Enter content to encrypt..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="doEncrypt()">🔐 Encrypt</button>
+    </div>
+
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>Ciphertext (Base64)</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('enc-ciphertext').value)">📋 Copy</button>
+      </div>
+      <textarea id="enc-ciphertext" readonly placeholder="Ciphertext will appear here..."></textarea>
+    </div>
+    <div id="enc-error" class="error-msg"></div>
+  </div>
+
+  <!-- Decrypt tab -->
+  <div id="tab-decrypt" style="display:none">
+    <div class="field">
+      <div class="label-row"><label>Key / Password</label></div>
+      <input type="text" id="dec-key" placeholder="Enter the password used for encryption" autocomplete="off">
+    </div>
+
+    <div class="field">
+      <div class="label-row"><label>Ciphertext (Base64)</label></div>
+      <textarea id="dec-ciphertext" placeholder="Paste Base64-encoded ciphertext..."></textarea>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-accent" onclick="doDecrypt()">🔓 Decrypt</button>
+    </div>
+
+    <div class="field" style="margin-top:1rem">
+      <div class="label-row">
+        <label>Plaintext</label>
+        <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('dec-plaintext').value)">📋 Copy</button>
+      </div>
+      <textarea id="dec-plaintext" readonly placeholder="Decrypted result will appear here..."></textarea>
+    </div>
+    <div id="dec-error" class="error-msg"></div>
+  </div>
+
+  <div style="margin-top:1.5rem;padding:0.75rem;background:var(--bg-card);border:1px solid var(--border);border-radius:var(--radius);font-size:0.8rem;color:var(--text-dim)">
+    💡 <strong>Security note:</strong> Uses AES-256-GCM algorithm. Ciphertext format is Base64(IV + ciphertext), ready for copy/paste or transmission. All encryption/decryption happens in your browser — your password never leaves your device.
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+// --- Tab switching ---
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('tab-encrypt').style.display = tab === 'encrypt' ? 'block' : 'none';
+  document.getElementById('tab-decrypt').style.display = tab === 'decrypt' ? 'block' : 'none';
+}
+
+// --- Key derivation (PBKDF2) ---
+async function deriveKey(password, salt) {
+  const enc = new TextEncoder();
+  const keyMaterial = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt, iterations: 100000, hash: 'SHA-256' },
+    keyMaterial,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+// --- Encrypt ---
+async function doEncrypt() {
+  const errorEl = document.getElementById('enc-error');
+  const output = document.getElementById('enc-ciphertext');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const password = document.getElementById('enc-key').value;
+  const plaintext = document.getElementById('enc-plaintext').value;
+  if (!password) { errorEl.textContent = 'Please enter a password'; return; }
+  if (!plaintext) { errorEl.textContent = 'Please enter content to encrypt'; return; }
+
+  try {
+    const salt = crypto.getRandomValues(new Uint8Array(16));
+    const iv = crypto.getRandomValues(new Uint8Array(12));
+    const key = await deriveKey(password, salt);
+    const enc = new TextEncoder();
+    const ciphertext = await crypto.subtle.encrypt(
+      { name: 'AES-GCM', iv }, key, enc.encode(plaintext)
+    );
+
+    // Pack: salt(16) + iv(12) + ciphertext
+    const packed = new Uint8Array(16 + 12 + ciphertext.byteLength);
+    packed.set(salt, 0);
+    packed.set(iv, 16);
+    packed.set(new Uint8Array(ciphertext), 28);
+
+    output.value = btoa(String.fromCharCode(...packed));
+  } catch(e) {
+    errorEl.textContent = 'Encryption failed: ' + e.message;
+  }
+}
+
+// --- Decrypt ---
+async function doDecrypt() {
+  const errorEl = document.getElementById('dec-error');
+  const output = document.getElementById('dec-plaintext');
+  errorEl.textContent = '';
+  output.value = '';
+
+  const password = document.getElementById('dec-key').value;
+  const b64Input = document.getElementById('dec-ciphertext').value.trim();
+  if (!password) { errorEl.textContent = 'Please enter the password'; return; }
+  if (!b64Input) { errorEl.textContent = 'Please paste the ciphertext'; return; }
+
+  try {
+    const packed = Uint8Array.from(atob(b64Input), c => c.charCodeAt(0));
+    if (packed.length < 28) { errorEl.textContent = 'Invalid ciphertext format (too short)'; return; }
+
+    const salt = packed.slice(0, 16);
+    const iv = packed.slice(16, 28);
+    const ciphertext = packed.slice(28);
+
+    const key = await deriveKey(password, salt);
+    const decrypted = await crypto.subtle.decrypt(
+      { name: 'AES-GCM', iv }, key, ciphertext
+    );
+
+    output.value = new TextDecoder().decode(decrypted);
+  } catch(e) {
+    errorEl.textContent = 'Decryption failed: wrong password or corrupted ciphertext';
+  }
+}
+</script>
+
+</body>
+</html>

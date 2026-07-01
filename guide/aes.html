@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AES加密是什么？AES-256-GCM原理与使用场景 - ToolForge</title>
+<meta name="description" content="一文看懂AES对称加密：AES-256-GCM模式原理、PBKDF2密钥派生、为什么推荐GCM而不是CBC。附在线AES加解密工具，所有运算本地完成。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/aes.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🔒 AES 对称加密：一个密钥，双向通行</h1>
+    <p>理解 AES-256-GCM 的工作原理、PBKDF2 密钥派生，以及什么时候该用对称加密</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>什么是对称加密？</h2>
+    <p>
+      对称加密就像一把钥匙开一把锁——<strong>加密和解密使用同一个密钥</strong>。你用密码加密了一段文字，对方也必须用完全相同的密码才能解密。这和 RSA 非对称加密完全不同（非对称加密有两把不同的钥匙：公钥和私钥）。
+    </p>
+    <p>
+      AES（Advanced Encryption Standard，高级加密标准）是目前世界上使用最广泛的对称加密算法。它由美国国家标准与技术研究院（NIST）在 2001 年发布，至今没有被发现任何有效的攻击方法。
+    </p>
+
+    <div class="highlight">
+      <strong>一句话：</strong>AES 用同一个密钥完成加密和解密。速度快、安全性经过全球验证，是加密大量数据的最佳选择。
+    </div>
+
+    <h2>AES-256-GCM：为什么选这个组合？</h2>
+
+    <h3>AES-256 = 密钥长度 256 位</h3>
+    <p>
+      AES 有三种密钥长度：128 位、192 位、256 位。位数越大越安全。256 位密钥有 2²⁵⁶ 种可能的组合——这个数字比可观测宇宙中的原子总数还要大得多。即使用量子计算机（Grover 算法），256 位 AES 也相当于 128 位的安全强度，仍然被认为是安全的。
+    </p>
+
+    <h3>GCM = Galois/Counter Mode（伽罗瓦/计数器模式）</h3>
+    <p>
+      AES 本身只是一个"块加密算法"，一次只能加密 128 位（16 字节）的数据。要加密任意长度的数据，需要选择一种"工作模式"。GCM 是目前最推荐的模式，因为它同时提供：
+    </p>
+    <ul>
+      <li><strong>机密性（Confidentiality）：</strong>加密后的数据无法被读取</li>
+      <li><strong>完整性（Integrity）：</strong>数据在传输过程中如果被篡改，解密时会自动检测到</li>
+      <li><strong>认证（Authentication）：</strong>确认密文确实是用正确的密钥加密的</li>
+    </ul>
+
+    <table>
+      <tr><th>模式</th><th>机密性</th><th>完整性</th><th>推荐？</th></tr>
+      <tr><td>ECB（电子密码本）</td><td>❌ 有严重缺陷</td><td>❌</td><td>绝不使用</td></tr>
+      <tr><td>CBC（密码块链接）</td><td>✅</td><td>❌ 需额外 HMAC</td><td>遗留系统</td></tr>
+      <tr><td>CTR（计数器）</td><td>✅</td><td>❌</td><td>一般</td></tr>
+      <tr><td><strong>GCM（伽罗瓦/计数器）</strong></td><td>✅</td><td>✅ 内置</td><td><strong>✅ 推荐</strong></td></tr>
+    </table>
+
+    <div class="highlight">
+      <strong>专业提示：</strong>如果看到某系统仍在使用 AES-CBC，建议升级到 GCM。CBC 本身不提供完整性校验，需要额外套一层 HMAC，实现复杂且容易出错。GCM 在一步中完成加密+认证，被称为 AEAD（Authenticated Encryption with Associated Data）。
+    </div>
+
+    <h2>PBKDF2：把密码变成密钥</h2>
+    <p>
+      你的密码可能是 <code>"hello123"</code> 这样的短字符串，但 AES-256 需要恰好 256 位的密钥。怎么办？不能直接用密码做密钥——太短且不够随机。解决方案是<strong>密钥派生函数（KDF）</strong>。
+    </p>
+    <p>
+      <strong>PBKDF2（Password-Based Key Derivation Function 2）</strong>通过以下步骤把任意长度的密码变成固定长度的强密钥：
+    </p>
+    <ul>
+      <li><strong>加盐（Salt）：</strong>随机生成的 16 字节数据，确保相同的密码每次产生不同的密钥</li>
+      <li><strong>多次迭代（Iterations）：</strong>重复哈希计算 100,000 次，大幅增加暴力破解成本</li>
+      <li><strong>哈希算法：</strong>使用 SHA-256 作为底层哈希函数</li>
+    </ul>
+
+    <pre><code>// PBKDF2 密钥派生示意
+const keyMaterial = await crypto.subtle.importKey('raw', passwordBytes, 'PBKDF2', false, ['deriveKey']);
+const aesKey = await crypto.subtle.deriveKey(
+  { name: 'PBKDF2', salt: randomSalt, iterations: 100000, hash: 'SHA-256' },
+  keyMaterial,
+  { name: 'AES-GCM', length: 256 },
+  false,
+  ['encrypt', 'decrypt']
+);</code></pre>
+
+    <p>
+      10 万次迭代意味着：即使攻击者拿到了你的密文和盐值，每尝试一个密码都要做 10 万次 SHA-256 运算。假设攻击者每秒能算 10 亿次哈希，破解一个 8 位随机密码仍然需要几百年。
+    </p>
+
+    <h2>IV（初始化向量）是什么？</h2>
+    <p>
+      IV（Initialization Vector）是一个随机生成的 12 字节数据，确保<strong>同样的明文 + 同样的密钥，每次加密产生不同的密文</strong>。没有 IV，攻击者就能看出"这段密文和上次一样，说明内容是相同的"——这在军事和商业场景中可能是致命的信息泄露。
+    </p>
+    <p>
+      在 GCM 模式下，IV 通常是 12 字节（96 位），必须随机生成且每次加密都不同。IV 不需要保密——它通常和密文一起存储或传输。
+    </p>
+
+    <h2>什么时候用 AES 对称加密？</h2>
+    <ul>
+      <li>🔐 <strong>加密本地文件/数据库：</strong>速度快，适合加密大量数据</套</li>
+      <li>💬 <strong>端到端加密聊天：</strong>Signal、WhatsApp 都是用 AES 加密消息内容</li>
+      <li>🌐 <strong>HTTPS 数据传输：</strong>TLS 握手建立共享密钥后，实际数据传输用的是 AES</li>
+      <li>🔑 <strong>配合 RSA 使用：</strong>用 RSA 加密 AES 密钥，用 AES 加密实际内容——取长补短</li>
+      <li>📦 <strong>配置加密：</strong>加密 API Key、数据库密码等敏感配置</li>
+    </ul>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就试试在线 AES 加密</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">AES-256-GCM，PBKDF2 密钥派生，Base64 输出，全部本地运算</p>
+    <a href="../tools/aes.html" class="btn">🔒 打开 AES 加解密工具</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: AES 会被量子计算机破解吗？</h3>
+    <p>Grover 算法可以将暴力破解 256 位密钥的复杂度从 2²⁵⁶ 降到 2¹²⁸。2¹²⁸ 仍然是一个天文数字（约 3.4×10³⁸），在可预见的未来无法暴力破解。因此 AES-256 被认为是"后量子安全"的。相比之下，RSA 和 ECC 在量子计算机面前就不安全了。</p>
+
+    <h3>Q: 为什么 GCM 的 IV 必须是 12 字节？</h3>
+    <p>GCM 模式下 IV 的长度可以是任意值，但 12 字节（96 位）是最优选择。如果不是 12 字节，GCM 内部会额外做一次 GHASH 运算来填充，增加计算开销。NIST 明确推荐使用 12 字节 IV。</p>
+
+    <h3>Q: 同一个密钥能重复使用多少次？</h3>
+    <p>AES-GCM 在给定密钥下，只要确保 IV 不重复，理论上可以加密 2³² 条消息（约 43 亿条）。但实际上，建议定期更换密钥。如果 IV 被不小心重复使用（同一密钥 + 同一 IV 加密两条不同消息），GCM 的安全性会严重下降——攻击者可能恢复认证密钥。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

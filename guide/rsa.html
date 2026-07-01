@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RSA非对称加密原理：公钥和私钥是什么？ - ToolForge</title>
+<meta name="description" content="深入理解RSA非对称加密：公钥加密、私钥解密的数学原理、RSA-OAEP填充方式、2048位vs 4096位密钥选择。附在线RSA密钥生成和加解密工具。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="../tools/timestamp.html">时间戳</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">编码</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">随机</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/guide/rsa.html">EN</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🔑 RSA 非对称加密：两把钥匙的魔法</h1>
+    <p>理解公钥/私钥机制、RSA-OAEP 填充方式，以及如何安全地生成和使用 RSA 密钥</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>什么是非对称加密？</h2>
+    <p>
+      非对称加密最大的特点是<strong>有两把不同的钥匙</strong>：一把公钥（Public Key），一把私钥（Private Key）。公钥可以公开给任何人，用来<strong>加密</strong>数据；私钥必须严格保密，用来<strong>解密</strong>数据。
+    </p>
+    <p>
+      这和 AES 完全不同——AES 加解密用同一把钥匙，叫"对称加密"。非对称加密解决的是"密钥分发"问题：你怎么把密钥安全地传给对方？有了 RSA，你只需要拿到对方的公钥就能加密，而私钥永远不需要离开对方的设备。
+    </p>
+
+    <div class="highlight">
+      <strong>类比：</strong>公钥就像一个公开的邮箱地址——任何人都可以把信投进去。私钥就像邮箱的钥匙——只有持有钥匙的人才能打开邮箱读取信件。
+    </div>
+
+    <h2>RSA 的数学原理（简化版）</h2>
+    <p>
+      RSA 的安全性建立在<strong>大数质因数分解的困难性</strong>上。简单来说：
+    </p>
+    <ul>
+      <li>随机选两个非常大的质数 <code>p</code> 和 <code>q</code>（比如各 1024 位）</li>
+      <li>计算 <code>n = p × q</code>。n 就是"模数"，出现在公钥和私钥中</li>
+      <li>选择一个公钥指数 <code>e</code>（通常是 65537）</li>
+      <li>计算私钥指数 <code>d</code>，使得 <code>(m^e)^d ≡ m (mod n)</code></li>
+    </ul>
+    <p>
+      加密就是计算 <code>c = m^e mod n</code>，解密就是 <code>m = c^d mod n</code>。<strong>核心难题：</strong>如果你只知道 <code>n</code>（公开的），要算出 <code>p</code> 和 <code>q</code> 需要分解一个 2048 位的超大整数——以目前的计算能力，暴力分解需要的时间远超宇宙年龄。
+    </p>
+
+    <h2>RSA-OAEP：为什么不能直接用 RSA？</h2>
+    <p>
+      教科书上的"RSA 加密 = m^e mod n"只是基础，直接用有严重安全问题。实际使用中必须加上<strong>填充方案（Padding Scheme）</strong>。OAEP（Optimal Asymmetric Encryption Padding，最优非对称加密填充）是目前的标准方案。
+    </p>
+
+    <table>
+      <tr><th>填充方案</th><th>安全性</th><th>推荐？</th></tr>
+      <tr><td>无填充（Textbook RSA）</td><td>❌ 多项攻击</td><td>绝不使用</td></tr>
+      <tr><td>PKCS#1 v1.5</td><td>⚠️ 有已知弱点</td><td>避免使用</td></tr>
+      <tr><td><strong>OAEP (SHA-256)</strong></td><td>✅ 安全</td><td><strong>✅ 推荐</strong></td></tr>
+    </table>
+
+    <p>
+      OAEP 在加密前引入了随机填充，确保<strong>同样的明文每次加密产生不同的密文</strong>，同时防止了多种数学攻击。浏览器 Web Crypto API 直接支持 RSA-OAEP：
+    </p>
+
+    <pre><code>// 使用 Web Crypto API 进行 RSA-OAEP 加密
+const pubKey = await crypto.subtle.importKey(
+  'spki', pemToArrayBuffer(pem),
+  { name: 'RSA-OAEP', hash: 'SHA-256' },
+  false, ['encrypt']
+);
+const ciphertext = await crypto.subtle.encrypt(
+  { name: 'RSA-OAEP' }, pubKey, new TextEncoder().encode(plaintext)
+);</code></pre>
+
+    <h2>2048 位 vs 4096 位：选哪个？</h2>
+    <table>
+      <tr><th>参数</th><th>2048 位</th><th>4096 位</th></tr>
+      <tr><td>安全级别</td><td>约 112 位等效</td><td>约 140 位等效</td></tr>
+      <tr><td>密钥生成时间</td><td>~1-3 秒</td><td>~10-30 秒</td></tr>
+      <tr><td>加密操作速度</td><td>快</td><td>慢 4-8 倍</td></tr>
+      <tr><td>最大明文长度</td><td>~190 字节</td><td>~446 字节</td></tr>
+      <tr><td>NIST 推荐</td><td>有效期到 2030</td><td>长期安全</td></tr>
+    </table>
+    <p>
+      <strong>一般建议：</strong>2048 位足够应对绝大多数场景。如果你需要更长期的安全保障（比如加密需要保存 10 年以上的数据），或者你的安全策略要求 4096 位，就选 4096 位。现代浏览器生成 2048 位密钥只需要 1-3 秒，4096 位则需要 10-30 秒。
+    </p>
+
+    <h2>RSA 的长度限制和解决方案</h2>
+    <p>
+      RSA 一个核心限制是：<strong>加密的明文长度不能超过密钥长度减去填充的长度</strong>。2048 位 RSA-OAEP（SHA-256）最多加密约 190 字节。如果你想加密一张图片或一段长文本，RSA 直接做不到。
+    </p>
+    <p>
+      <strong>标准做法——混合加密（Hybrid Encryption）：</strong>
+    </p>
+    <ol style="margin:0.5rem 0 1rem 1.5rem;color:var(--text-dim)">
+      <li>生成一个随机的 AES 密钥</li>
+      <li>用 AES 加密实际数据（速度快，无长度限制）</li>
+      <li>用 RSA 加密那个 AES 密钥（AES 密钥只有 32 字节，RSA 轻松加密）</li>
+      <li>把 RSA 加密的密钥和 AES 加密的数据一起发给对方</li>
+    </ol>
+    <p>
+      这就是 HTTPS、PGP、SSH 等几乎所有现代加密协议的做法。RSA 负责安全地传递密钥，AES 负责高效地加密数据——两者互补。
+    </p>
+
+    <h2>实际场景：什么时候用 RSA？</h2>
+    <ul>
+      <li>🔐 <strong>安全密钥交换：</strong>在不安全的信道上协商出一个共享密钥（TLS 握手）</li>
+      <li>✍️ <strong>数字签名：</strong>用私钥签名，任何人用公钥验证——证明消息确实来自你</li>
+      <li>📧 <strong>加密邮件：</strong>用收件人的公钥加密邮件内容</li>
+      <li>🔑 <strong>SSH 登录：</strong>你本地生成密钥对，把公钥放到服务器，登录时用私钥认证</li>
+      <li>🔄 <strong>API 鉴权：</strong>用私钥对请求签名，服务端用公钥验证——JWT 的 RS256 算法</li>
+    </ul>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 现在就生成一对 RSA 密钥</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">支持 2048/4096 位，一键生成、复制 PEM 格式密钥</p>
+    <a href="../tools/rsa.html" class="btn">🔑 打开 RSA 加解密工具</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>常见问题</h2>
+    <h3>Q: 公钥能反推出私钥吗？</h3>
+    <p>不能。从公钥（包含模数 n 和指数 e）反推私钥（指数 d），需要知道 n 的质因数 p 和 q。分解一个 2048 位的巨大整数，即使动员全世界的算力也需要远超宇宙年龄的时间。但注意：量子计算机（Shor 算法）理论上可以在多项式时间内分解大整数，因此 RSA 不是"后量子安全"的。</p>
+
+    <h3>Q: 为什么公钥指数 e 通常是 65537？</h3>
+    <p>65537（二进制 10000000000000001）是一个质数，且只有两个 1 位。这使得加密运算（m^e mod n）可以通过"平方-乘"快速算法极快地完成。选择 65537 而不是 3（更小的选择）是为了防止低指数攻击。65537 是性能和安全性之间的最优平衡点。</p>
+
+    <h3>Q: RSA 密钥应该多久换一次？</h3>
+    <p>取决于使用场景。NIST 建议 RSA 2048 位密钥的安全使用期限到 2030 年。对于高安全性场景，建议每年轮换；对于一般应用，2-3 年轮换一次是合理的。关键是：一旦怀疑私钥泄露，立刻更换——RSA 密钥没有"前向安全性"，泄露的私钥能解密所有历史密文。</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · 所有运算在浏览器本地完成，不上传任何数据</p>
+</footer>
+
+<script src="../js/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AES Encryption Explained: AES-256-GCM, PBKDF2, and When to Use It - ToolForge</title>
+<meta name="description" content="Understand AES symmetric encryption: how AES-256-GCM works, PBKDF2 key derivation, why GCM beats CBC. Includes online AES encryption tool — all computation is client-side.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/aes.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🔒 AES Symmetric Encryption: One Key, Both Ways</h1>
+    <p>Understand AES-256-GCM internals, PBKDF2 key derivation, and when to choose symmetric encryption</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>What Is Symmetric Encryption?</h2>
+    <p>
+      Symmetric encryption is like a single key that both locks and unlocks — <strong>encryption and decryption use the same key</strong>. You encrypt data with a password, and the recipient must use the exact same password to decrypt it. This is fundamentally different from RSA asymmetric encryption, which uses two different keys (public and private).
+    </p>
+    <p>
+      AES (Advanced Encryption Standard) is the most widely used symmetric encryption algorithm in the world. Published by NIST in 2001, it has stood over two decades of cryptanalysis with no effective attacks discovered.
+    </p>
+
+    <div class="highlight">
+      <strong>TL;DR:</strong> AES uses the same key for encryption and decryption. It's fast, battle-tested, and the best choice for encrypting large amounts of data.
+    </div>
+
+    <h2>AES-256-GCM: Why This Combination?</h2>
+
+    <h3>AES-256 = 256-bit Key Length</h3>
+    <p>
+      AES comes in three key sizes: 128-bit, 192-bit, and 256-bit. Larger is more secure. A 256-bit key has 2²⁵⁶ possible combinations — a number larger than the estimated atoms in the observable universe. Even with a quantum computer running Grover's algorithm, AES-256 retains 128-bit equivalent security, which is still considered safe.
+    </p>
+
+    <h3>GCM = Galois/Counter Mode</h3>
+    <p>
+      AES itself is just a "block cipher" — it can only encrypt 128 bits (16 bytes) at a time. To encrypt data of arbitrary length, you need a mode of operation. GCM is the most recommended mode today because it provides three properties in one:
+    </p>
+    <ul>
+      <li><strong>Confidentiality:</strong> Encrypted data cannot be read</li>
+      <li><strong>Integrity:</strong> If data is tampered with in transit, decryption automatically detects it</li>
+      <li><strong>Authentication:</strong> Confirms the ciphertext was created with the correct key</li>
+    </ul>
+
+    <table>
+      <tr><th>Mode</th><th>Confidentiality</th><th>Integrity</th><th>Recommended?</th></tr>
+      <tr><td>ECB (Electronic Codebook)</td><td>❌ Serious flaws</td><td>❌</td><td>Never use</td></tr>
+      <tr><td>CBC (Cipher Block Chaining)</td><td>✅</td><td>❌ Needs HMAC</td><td>Legacy only</td></tr>
+      <tr><td>CTR (Counter)</td><td>✅</td><td>❌</td><td>Fair</td></tr>
+      <tr><td><strong>GCM (Galois/Counter)</strong></td><td>✅</td><td>✅ Built-in</td><td><strong>✅ Recommended</strong></td></tr>
+    </table>
+
+    <div class="highlight">
+      <strong>Pro tip:</strong> If you see a system still using AES-CBC, upgrade to GCM. CBC doesn't provide integrity checking on its own — you need to wrap an HMAC around it, which is complex and error-prone. GCM handles encryption + authentication in one step. This pattern is called AEAD (Authenticated Encryption with Associated Data).
+    </div>
+
+    <h2>PBKDF2: Turning Passwords Into Keys</h2>
+    <p>
+      Your password might be something like <code>"hello123"</code> — a short string. But AES-256 requires exactly 256 bits of key material. You can't use the password directly — it's too short and not random enough. The solution is a <strong>Key Derivation Function (KDF)</strong>.
+    </p>
+    <p>
+      <strong>PBKDF2 (Password-Based Key Derivation Function 2)</strong> transforms any-length passwords into fixed-length strong keys through:
+    </p>
+    <ul>
+      <li><strong>Salt:</strong> 16 random bytes, ensuring the same password produces a different key every time</li>
+      <li><strong>Iterations:</strong> 100,000 rounds of repeated hashing, dramatically increasing brute-force cost</li>
+      <li><strong>Hash function:</strong> SHA-256 as the underlying hash</li>
+    </ul>
+
+    <pre><code>// PBKDF2 key derivation
+const keyMaterial = await crypto.subtle.importKey('raw', passwordBytes, 'PBKDF2', false, ['deriveKey']);
+const aesKey = await crypto.subtle.deriveKey(
+  { name: 'PBKDF2', salt: randomSalt, iterations: 100000, hash: 'SHA-256' },
+  keyMaterial,
+  { name: 'AES-GCM', length: 256 },
+  false,
+  ['encrypt', 'decrypt']
+);</code></pre>
+
+    <p>
+      100,000 iterations means: even if an attacker obtains your ciphertext and salt, each password guess requires 100,000 SHA-256 computations. At 1 billion hashes per second, cracking an 8-character random password would still take centuries.
+    </p>
+
+    <h2>What Is the IV (Initialization Vector)?</h2>
+    <p>
+      The IV is 12 random bytes that ensure <strong>the same plaintext + same key produces different ciphertext every time</strong>. Without an IV, an attacker could see "this ciphertext matches the previous one, so the content must be the same" — a potentially catastrophic information leak in military and business contexts.
+    </p>
+    <p>
+      In GCM mode, the IV is typically 12 bytes (96 bits). It must be randomly generated and unique per encryption. The IV does not need to be secret — it's commonly stored or transmitted alongside the ciphertext.
+    </p>
+
+    <h2>When Should You Use AES Symmetric Encryption?</h2>
+    <ul>
+      <li>🔐 <strong>Encrypting local files / databases:</strong> Fast, ideal for large data volumes</li>
+      <li>💬 <strong>End-to-end encrypted chat:</strong> Signal and WhatsApp use AES to encrypt message content</li>
+      <li>🌐 <strong>HTTPS data transfer:</strong> After TLS handshake establishes a shared key, the actual data stream uses AES</li>
+      <li>🔑 <strong>Combined with RSA:</strong> Use RSA to encrypt the AES key, use AES to encrypt the actual content — the best of both worlds</li>
+      <li>📦 <strong>Config encryption:</strong> Encrypt API keys, database passwords, and other sensitive configuration</li>
+    </ul>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Try AES encryption now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">AES-256-GCM, PBKDF2 key derivation, Base64 output, all client-side</p>
+    <a href="../tools/aes.html" class="btn">🔒 Open AES Encryption Tool</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: Will quantum computers break AES?</h3>
+    <p>Grover's algorithm reduces brute-forcing a 256-bit key from 2²⁵⁶ to 2¹²⁸. But 2¹²⁸ (roughly 3.4×10³⁸) is still an astronomically large number — brute-forcing it is infeasible for the foreseeable future. AES-256 is considered "post-quantum secure." By contrast, RSA and ECC are not safe against quantum attacks.</p>
+
+    <h3>Q: Why does GCM require a 12-byte IV?</h3>
+    <p>GCM can accept IVs of any length, but 12 bytes (96 bits) is optimal. For other lengths, GCM internally performs an extra GHASH computation to pad the IV, adding computational overhead. NIST explicitly recommends 12-byte IVs.</p>
+
+    <h3>Q: How many times can I reuse the same key?</h3>
+    <p>AES-GCM can theoretically encrypt up to 2³² messages (about 4.3 billion) under a single key, as long as the IV never repeats. In practice, rotate keys periodically. Crucially: if you ever reuse the same IV with the same key to encrypt two different messages, GCM's security collapses — an attacker may recover the authentication key.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ToolForge - 开发者在线工具集 | AES/RSA加密 时间戳 JSON Base64 UUID 字数统计</title>
+<meta name="description" content="免费在线开发者工具：时间戳转换、JSON格式化、Base64编解码、UUID生成器、AES/RSA加密、字数统计。快速、干净。">
+<link rel="stylesheet" href="css/style.css">
+<style>
+  .tool-grid { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .category-badge {
+    display: inline-block; font-size: 0.65rem; padding: 0.15rem 0.5rem;
+    border-radius: 4px; background: var(--border); color: var(--text-dim);
+    margin-top: 0.5rem;
+  }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="index.html" class="active">首页</a>
+    <a href="tools/timestamp.html">时间戳</a>
+    <a href="tools/json.html">JSON</a>
+    <a href="tools/base64.html">编码</a>
+    <a href="tools/uuid.html">UUID</a>
+    <a href="tools/random.html">随机</a>
+    <a href="tools/aes.html">AES</a>
+    <a href="tools/rsa.html">RSA</a>
+    <a href="tools/wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="en/index.html">EN</a></span>
+</header>
+
+<main>
+  <section class="hero">
+    <h1>开发者在线工具集</h1>
+    <p>干净、快速。每一个工具都做到极致。</p>
+    <div class="hero-meta">
+      <span>🛠️ 8 个工具</span>
+      <span>🔒 本地运算</span>
+      <span>📱 移动端适配</span>
+    </div>
+  </section>
+
+  <!-- Ad slot: top banner -->
+  <div class="ad-slot" data-ad-label="广告位 · 顶部横幅"></div>
+
+  <div class="tool-grid">
+    <!-- Row 1: 编码转换 -->
+    <a href="tools/timestamp.html" class="tool-card">
+      <div class="card-icon">🕐</div>
+      <h3>时间戳转换</h3>
+      <p>Unix时间戳 ↔ 日期时间互转，支持秒/毫秒，多时区</p>
+      <span class="category-badge">时间工具</span>
+    </a>
+    <a href="tools/base64.html" class="tool-card">
+      <div class="card-icon">🔐</div>
+      <h3>Base64 & URL 编解码</h3>
+      <p>Base64和URL编码解码，支持中文和特殊字符</p>
+      <span class="category-badge">编码转换</span>
+    </a>
+
+    <!-- Row 2: 格式化 -->
+    <a href="tools/json.html" class="tool-card">
+      <div class="card-icon">📋</div>
+      <h3>JSON 格式化</h3>
+      <p>格式化、压缩、校验JSON，语法高亮，一键复制</p>
+      <span class="category-badge">格式化</span>
+    </a>
+
+    <!-- Row 3: 生成器 -->
+    <a href="tools/uuid.html" class="tool-card">
+      <div class="card-icon">🆔</div>
+      <h3>UUID 生成器</h3>
+      <p>生成UUID v4标识符，支持批量生成和去横线</p>
+      <span class="category-badge">生成器</span>
+    </a>
+    <a href="tools/random.html" class="tool-card">
+      <div class="card-icon">🎲</div>
+      <h3>随机字符串生成器</h3>
+      <p>自定义长度和字符集，大小写/数字/特殊符号可选</p>
+      <span class="category-badge">生成器</span>
+    </a>
+
+    <!-- Row 4: 加密 -->
+    <a href="tools/aes.html" class="tool-card">
+      <div class="card-icon">🔒</div>
+      <h3>AES 加解密</h3>
+      <p>AES-256-GCM对称加密，本地运算，密码不上传</p>
+      <span class="category-badge">加密</span>
+    </a>
+    <a href="tools/rsa.html" class="tool-card">
+      <div class="card-icon">🔑</div>
+      <h3>RSA 加解密</h3>
+      <p>RSA-OAEP非对称加密，密钥生成/加密/解密全流程</p>
+      <span class="category-badge">加密</span>
+    </a>
+
+    <!-- Row 5: 文本 -->
+    <a href="tools/wordcount.html" class="tool-card">
+      <div class="card-icon">📝</div>
+      <h3>字数统计</h3>
+      <p>中英文字数、字符数、行数、段落数实时统计</p>
+      <span class="category-badge">文本工具</span>
+    </a>
+  </div>
+
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="广告位 · 底部"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — 8 款开发者工具，全部本地运算，数据不出浏览器。</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · 为效率而生</p>
+</footer>
+
+<script src="js/common.js"></script>
+</body>
+</html>

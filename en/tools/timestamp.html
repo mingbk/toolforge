@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unix Timestamp Converter - ToolForge</title>
+<meta name="description" content="Free online Unix timestamp converter. Convert between timestamps and human-readable dates. Supports seconds/milliseconds, 18 timezones, ISO 8601.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  select { 
+    background: var(--bg-input); color: var(--text); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 0.5rem 0.75rem; font-size: 0.85rem;
+    font-family: var(--font-sans); outline: none; cursor: pointer;
+  }
+  select:focus { border-color: var(--accent); }
+  .unit-toggle { display: inline-flex; border-radius: var(--radius); overflow: hidden; border: 1px solid var(--border); }
+  .unit-toggle button {
+    padding: 0.4rem 1rem; font-size: 0.8rem; border: none; background: transparent;
+    color: var(--text-dim); cursor: pointer; font-family: var(--font-sans);
+    transition: all 0.15s;
+  }
+  .unit-toggle button.active { background: var(--accent); color: #fff; }
+  .ts-result-line { padding: 0.3rem 0; font-size: 0.9rem; }
+  .ts-result-line .label { color: var(--text-dim); min-width: 60px; display: inline-block; }
+  .ts-result-line .value { color: var(--accent); font-family: var(--font-mono); }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html" class="active">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/timestamp.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>🕐 Unix Timestamp Converter</h1>
+    <p>Convert between Unix timestamps and human-readable dates. Supports seconds, milliseconds, and 18 timezones.<br><a href="../guide/timestamp.html" style="font-size:0.85rem;color:var(--text-dim)">📖 What is a Unix timestamp? Read the guide →</a></p>
+  </div>
+
+  <!-- Ad slot: top -->
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <!-- Current timestamp -->
+  <div class="field">
+    <div class="label-row"><label>Current Timestamp</label></div>
+    <div class="stats-grid" style="grid-template-columns: 1fr 1fr;">
+      <div class="stat-card">
+        <div class="stat-value" id="now-seconds">—</div>
+        <div class="stat-label">Seconds (10-digit) <button class="btn btn-sm" style="margin-left:0.3rem" onclick="copyToClipboard(document.getElementById('now-seconds').textContent)">📋</button></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="now-millis">—</div>
+        <div class="stat-label">Milliseconds (13-digit) <button class="btn btn-sm" style="margin-left:0.3rem" onclick="copyToClipboard(document.getElementById('now-millis').textContent)">📋</button></div>
+      </div>
+    </div>
+    <div style="margin-top:0.75rem;text-align:center;font-size:0.85rem;color:var(--text-dim)">
+      <span id="now-datetime"></span> <button class="btn btn-sm" style="margin-left:0.3rem" onclick="copyToClipboard(document.getElementById('now-datetime').textContent)">📋</button>
+    </div>
+  </div>
+
+  <hr style="border:1px solid var(--border);margin:2rem 0">
+
+  <!-- Timestamp → Date -->
+  <div class="field">
+    <div class="label-row">
+      <label>Timestamp → Date</label>
+      <div class="unit-toggle" id="ts-unit-toggle">
+        <button class="active" onclick="setTsUnit('sec', this)">Sec</button>
+        <button onclick="setTsUnit('ms', this)">Ms</button>
+      </div>
+    </div>
+    <input type="text" id="ts-input" placeholder="Enter timestamp, e.g. 1750262400" onkeydown="if(event.key==='Enter')tsToDate()">
+    <div style="margin-top:0.75rem">
+      <div style="margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:0.8rem;color:var(--text-dim)">Timezone</span>
+        <select id="ts-tz"></select>
+        <button class="btn btn-accent btn-sm" onclick="tsToDate()">🔄 Convert</button>
+      </div>
+      <div id="ts-result"></div>
+      <div id="ts-error" class="error-msg"></div>
+    </div>
+  </div>
+
+  <!-- Date → Timestamp -->
+  <div class="field" style="margin-top:2rem">
+    <div class="label-row"><label>Date → Timestamp</label></div>
+    <input type="datetime-local" id="dt-input" style="width:100%">
+    <div style="margin-top:0.75rem">
+      <div style="margin-bottom:0.5rem;display:flex;align-items:center;gap:0.5rem">
+        <span style="font-size:0.8rem;color:var(--text-dim)">Timezone</span>
+        <select id="dt-tz"></select>
+        <button class="btn btn-sm" onclick="setNowDateTime()">🕐 Now</button>
+        <button class="btn btn-accent btn-sm" onclick="dateToTs()">🔄 Convert</button>
+      </div>
+      <div id="dt-result" style="font-size:0.9rem">
+        <div class="ts-result-line"><span class="label">Seconds (10-digit)</span><span class="value" id="dt-seconds">—</span> <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('dt-seconds').textContent)">📋</button></div>
+        <div class="ts-result-line"><span class="label">Ms (13-digit)</span><span class="value" id="dt-millis">—</span> <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('dt-millis').textContent)">📋</button></div>
+        <div class="ts-result-line"><span class="label">UTC</span><span class="value" id="dt-utc">—</span> <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('dt-utc').textContent)">📋</button></div>
+        <div class="ts-result-line"><span class="label">ISO 8601</span><span class="value" id="dt-iso">—</span> <button class="btn btn-sm" onclick="copyToClipboard(document.getElementById('dt-iso').textContent)">📋</button></div>
+      </div>
+    </div>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+// --- Timezone setup ---
+const COMMON_TZ = [
+  'UTC', 'Asia/Shanghai', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Singapore',
+  'Asia/Kolkata', 'Asia/Dubai', 'Europe/London', 'Europe/Paris', 'Europe/Berlin',
+  'Europe/Moscow', 'America/New_York', 'America/Chicago', 'America/Denver',
+  'America/Los_Angeles', 'America/Sao_Paulo', 'Australia/Sydney', 'Pacific/Auckland'
+];
+
+let userTZ;
+try {
+  userTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+} catch { userTZ = 'UTC'; }
+if (!COMMON_TZ.includes(userTZ)) COMMON_TZ.unshift(userTZ);
+
+function fillTZSelects() {
+  const userLabel = userTZ === 'UTC' ? 'UTC' : userTZ.replace(/_/g, ' ').replace(/\//g, ' / ');
+  const options = COMMON_TZ.map(tz =>
+    `<option value="${tz}" ${tz === userTZ ? 'selected' : ''}>${tz.replace(/_/g,' ').replace(/\//g,' / ')}</option>`
+  ).join('');
+  document.getElementById('ts-tz').innerHTML = options;
+  document.getElementById('dt-tz').innerHTML = options;
+  document.getElementById('dt-tz').value = userTZ;
+}
+fillTZSelects();
+initDateTime();
+
+// --- Init datetime-local with current time ---
+function initDateTime() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, '0');
+  const d = String(now.getDate()).padStart(2, '0');
+  const h = String(now.getHours()).padStart(2, '0');
+  const mi = String(now.getMinutes()).padStart(2, '0');
+  document.getElementById('dt-input').value = `${y}-${m}-${d}T${h}:${mi}`;
+  dateToTs();
+}
+
+function setNowDateTime() {
+  initDateTime();
+  dateToTs();
+}
+
+// --- Unit toggle ---
+let tsUnit = 'sec';
+function setTsUnit(unit, btn) {
+  const prevUnit = tsUnit;
+  tsUnit = unit;
+  btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ph = unit === 'ms' ? 'Enter millisecond timestamp, e.g. 1750262400000' : 'Enter timestamp, e.g. 1750262400';
+  document.getElementById('ts-input').placeholder = ph;
+  if (prevUnit !== unit) {
+    const input = document.getElementById('ts-input');
+    input.value = unit === 'ms' ? Date.now() : Math.floor(Date.now() / 1000);
+  }
+  tsToDate();
+}
+
+// --- Current time ---
+function updateNow() {
+  const now = new Date();
+  document.getElementById('now-seconds').textContent = Math.floor(now.getTime() / 1000);
+  document.getElementById('now-millis').textContent = now.getTime();
+  document.getElementById('now-datetime').textContent = now.toLocaleString('en-US', { hour12: false });
+  const tsInput = document.getElementById('ts-input');
+  if (!tsInput.value) {
+    tsInput.value = Math.floor(now.getTime() / 1000);
+    tsToDate();
+  }
+}
+updateNow();
+setInterval(updateNow, 1000);
+
+// --- Timestamp → Date ---
+function tsToDate() {
+  const input = document.getElementById('ts-input').value.trim();
+  const resultEl = document.getElementById('ts-result');
+  const errorEl = document.getElementById('ts-error');
+  resultEl.innerHTML = '';
+  errorEl.textContent = '';
+
+  if (!input) return;
+
+  const ts = parseInt(input);
+  if (isNaN(ts) || ts <= 0) {
+    errorEl.textContent = 'Please enter a valid timestamp (positive integer)';
+    return;
+  }
+
+  let ms;
+  if (tsUnit === 'ms') {
+    ms = ts;
+  } else {
+    ms = ts > 1e12 ? ts : ts * 1000;
+  }
+
+  const date = new Date(ms);
+  if (isNaN(date.getTime())) {
+    errorEl.textContent = 'Timestamp out of valid range';
+    return;
+  }
+
+  const tz = document.getElementById('ts-tz').value;
+
+  try {
+    const local = date.toLocaleString('en-US', { hour12: false, timeZone: tz });
+    const iso = date.toISOString().replace('T', ' ').slice(0, 19);
+    resultEl.innerHTML = `
+      <div class="ts-result-line"><span style="color:var(--text);font-size:1rem">${local}</span> <button class="btn btn-sm" onclick="copyToClipboard('${local}')">📋</button></div>
+      <div class="ts-result-line"><span class="label">UTC</span><span class="value">${iso}</span> <button class="btn btn-sm" onclick="copyToClipboard('${iso}')">📋</button></div>
+      <div class="ts-result-line"><span class="label">ISO 8601</span><span class="value">${date.toISOString()}</span> <button class="btn btn-sm" onclick="copyToClipboard(\`${date.toISOString()}\`)">📋</button></div>
+    `;
+  } catch (e) {
+    errorEl.textContent = 'Timezone display error, falling back to local time';
+    resultEl.innerHTML = `
+      <div class="ts-result-line"><span class="label">Local</span><span style="color:var(--text);font-size:1rem">${date.toLocaleString('en-US', { hour12: false })}</span> <button class="btn btn-sm" onclick="copyToClipboard(\`${date.toLocaleString('en-US', { hour12: false })}\`)">📋</button></div>
+      <div class="ts-result-line"><span class="label">UTC</span><span class="value">${date.toISOString().replace('T',' ').slice(0,19)}</span> <button class="btn btn-sm" onclick="copyToClipboard('${date.toISOString().replace('T',' ').slice(0,19)}')">📋</button></div>
+    `;
+  }
+}
+
+// --- Date → Timestamp ---
+function dateToTs() {
+  const val = document.getElementById('dt-input').value;
+  if (!val) return;
+
+  const tz = document.getElementById('dt-tz').value;
+
+  let date;
+  try {
+    const localStr = val;
+    if (tz && tz !== userTZ && tz !== 'UTC') {
+      const localDate = new Date(localStr);
+      const tzOffset = getTimezoneOffset(tz, localDate);
+      date = new Date(localDate.getTime() - tzOffset);
+    } else {
+      date = new Date(localStr);
+    }
+  } catch {
+    date = new Date(val);
+  }
+
+  const ms = date.getTime();
+  const sec = Math.floor(ms / 1000);
+
+  document.getElementById('dt-seconds').textContent = sec;
+  document.getElementById('dt-millis').textContent = ms;
+  document.getElementById('dt-utc').textContent = date.toISOString().replace('T', ' ').slice(0, 19);
+  document.getElementById('dt-iso').textContent = date.toISOString();
+}
+
+function getTimezoneOffset(tz, date) {
+  try {
+    const utcStr = date.toLocaleString('en-US', { timeZone: 'UTC', hour12: false });
+    const tzStr = date.toLocaleString('en-US', { timeZone: tz, hour12: false });
+    const utcDate = new Date(utcStr);
+    const tzDate = new Date(tzStr);
+    return tzDate.getTime() - utcDate.getTime();
+  } catch { return 0; }
+}
+</script>
+
+</body>
+</html>

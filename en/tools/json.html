@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Formatter - ToolForge</title>
+<meta name="description" content="Free online JSON formatter, validator and minifier. Syntax highlighting, real-time validation, one-click copy.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html" class="active">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/json.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>📋 JSON Formatter</h1>
+    <p>Format, minify and validate JSON. Syntax highlighting and one-click copy.<br><a href="../guide/json.html" style="font-size:0.85rem;color:var(--text-dim)">📖 What is JSON? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>Input JSON</label>
+      <div class="btn-group">
+        <button class="btn btn-sm" onclick="formatJSON()">✨ Format</button>
+        <button class="btn btn-sm" onclick="minifyJSON()">📦 Minify</button>
+        <button class="btn btn-sm" onclick="clearAll()">🗑 Clear</button>
+      </div>
+    </div>
+    <textarea id="json-input" placeholder='Paste JSON here, e.g. {"name":"hello","value":123}' oninput="liveValidate()"></textarea>
+  </div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>Output</label>
+      <button class="btn btn-sm" onclick="copyOutput()">📋 Copy Result</button>
+    </div>
+    <div id="json-output" class="json-output" style="min-height:180px;color:var(--text-dim)">
+      <span style="color:var(--text-dim)">Result will appear here</span>
+    </div>
+    <div id="json-error" class="error-msg" style="margin-top:0.4rem"></div>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+let lastParsed = null;
+
+function liveValidate() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  if (!input) {
+    errorEl.textContent = '';
+    return;
+  }
+  try {
+    JSON.parse(input);
+    errorEl.textContent = '';
+  } catch(e) {
+    errorEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+function formatJSON() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  errorEl.textContent = '';
+
+  if (!input) return;
+
+  try {
+    lastParsed = JSON.parse(input);
+    const formatted = JSON.stringify(lastParsed, null, 2);
+    document.getElementById('json-output').innerHTML = highlightJSON(formatted);
+  } catch(e) {
+    errorEl.textContent = '⚠ Invalid JSON: ' + e.message;
+    document.getElementById('json-output').innerHTML =
+      '<span style="color:var(--text-dim)">Please fix errors and try again</span>';
+  }
+}
+
+function minifyJSON() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  errorEl.textContent = '';
+
+  if (!input) return;
+
+  try {
+    lastParsed = JSON.parse(input);
+    const minified = JSON.stringify(lastParsed);
+    document.getElementById('json-output').textContent = minified;
+  } catch(e) {
+    errorEl.textContent = '⚠ Invalid JSON: ' + e.message;
+  }
+}
+
+function highlightJSON(jsonStr) {
+  const escaped = jsonStr
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return escaped.replace(
+    /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^"\\])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    function(match) {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'json-key';
+          match = match.slice(0, -1) + '</span>:';
+        } else {
+          cls = 'json-string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    }
+  );
+}
+
+function clearAll() {
+  document.getElementById('json-input').value = '';
+  document.getElementById('json-output').innerHTML = '<span style="color:var(--text-dim)">Result will appear here</span>';
+  document.getElementById('json-error').textContent = '';
+  lastParsed = null;
+}
+
+function copyOutput() {
+  if (!lastParsed) {
+    const text = document.getElementById('json-output').textContent.trim();
+    if (text && text !== 'Result will appear here') {
+      copyToClipboard(text);
+    }
+    return;
+  }
+  copyToClipboard(JSON.stringify(lastParsed, null, 2));
+}
+</script>
+
+</body>
+</html>

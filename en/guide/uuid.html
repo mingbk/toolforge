@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>What Is a UUID? Versions, Collision Probability & Use Cases - ToolForge</title>
+<meta name="description" content="A complete guide to UUIDs: what they are, v1 vs v4 vs v5 differences, collision probability, and when to use them. Includes free online UUID generator.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .guide-content { max-width: 720px; }
+  .guide-content h2 { margin-top: 2rem; font-size: 1.3rem; color: var(--accent); }
+  .guide-content h3 { margin-top: 1.5rem; font-size: 1.05rem; }
+  .guide-content p { margin: 0.75rem 0; color: var(--text); line-height: 1.8; }
+  .guide-content ul { margin: 0.5rem 0 1rem 1.5rem; }
+  .guide-content li { margin: 0.3rem 0; color: var(--text-dim); }
+  .guide-content code {
+    background: var(--bg-input); color: var(--accent); padding: 0.15rem 0.4rem;
+    border-radius: 4px; font-family: var(--font-mono); font-size: 0.85rem;
+  }
+  .guide-content pre {
+    background: var(--bg-input); padding: 1rem; border-radius: var(--radius);
+    overflow-x: auto; margin: 0.75rem 0; border: 1px solid var(--border);
+  }
+  .guide-content pre code { background: none; padding: 0; color: var(--green); }
+  .guide-content .highlight {
+    background: rgba(88,166,255,0.08); border-left: 3px solid var(--accent);
+    padding: 1rem; border-radius: 0 var(--radius) var(--radius) 0; margin: 1rem 0;
+  }
+  .cta-box {
+    background: var(--bg-card); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 1.5rem; margin: 2rem 0; text-align: center;
+  }
+  .cta-box .btn {
+    display: inline-block; padding: 0.6rem 1.5rem; background: var(--accent);
+    color: #fff; border-radius: var(--radius); font-weight: 600; margin-top: 0.75rem;
+  }
+  .cta-box .btn:hover { background: var(--accent-hover); }
+  table { width: 100%; border-collapse: collapse; margin: 1rem 0; }
+  th { background: var(--bg-input); text-align: left; padding: 0.5rem; font-size: 0.85rem; }
+  td { padding: 0.5rem; border-bottom: 1px solid var(--border); font-size: 0.85rem; }
+  td code { font-size: 0.8rem; }
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="../tools/timestamp.html">Timestamp</a>
+    <a href="../tools/json.html">JSON</a>
+    <a href="../tools/base64.html">Base64</a>
+    <a href="../tools/uuid.html">UUID</a>
+    <a href="../tools/random.html">Random</a>
+    <a href="../tools/aes.html">AES</a>
+    <a href="../tools/rsa.html">RSA</a>
+    <a href="../tools/wordcount.html">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../guide/uuid.html">中文</a></span>
+</header>
+
+<main>
+  <div class="tool-header">
+    <h1>🆔 UUID: The Complete Guide to Universally Unique Identifiers</h1>
+    <p>From theory to practice — understand every UUID version and how to use them correctly</p>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>What Is a UUID?</h2>
+    <p>
+      UUID stands for <strong>Universally Unique Identifier</strong>. It's a 128-bit number, typically displayed as 32 hexadecimal characters with 4 hyphens:
+    </p>
+    <pre><code>550e8400-e29b-41d4-a716-446655440000</code></pre>
+    <p>
+      Its core promise: <strong>every UUID you generate is globally unique</strong> — no central server needed to coordinate, no collision checking required, generate and use. That's what "universally" unique means.
+    </p>
+
+    <div class="highlight">
+      <strong>TL;DR:</strong> UUIDs are globally unique IDs that don't require central coordination. They're the standard choice for distributed systems.
+    </div>
+
+    <h2>UUID Versions: v1, v4, v5 — What's the Difference?</h2>
+    <p>
+      UUID has multiple versions, each with a different generation algorithm. In practice, you only need to know these three:
+    </p>
+
+    <table>
+      <tr><th>Version</th><th>Generation Method</th><th>Characteristics</th><th>Best For</th></tr>
+      <tr>
+        <td><strong>UUID v1</strong></td>
+        <td>Timestamp + MAC address</td>
+        <td>Sortable, leaks machine info</td>
+        <td>Database primary keys (ordered), logging</td>
+      </tr>
+      <tr>
+        <td><strong>UUID v4</strong></td>
+        <td>Pure random</td>
+        <td>Fully random, most common</td>
+        <td>General-purpose unique IDs, session IDs, filenames</td>
+      </tr>
+      <tr>
+        <td><strong>UUID v5</strong></td>
+        <td>SHA-1 hash of namespace + name</td>
+        <td>Deterministic — same input = same UUID</td>
+        <td>Generating fixed UUIDs from existing names</td>
+      </tr>
+    </table>
+
+    <h3>UUID v1: Timestamp Reveals When and Where</h3>
+    <p>
+      UUID v1's first half is a <strong>timestamp</strong>; the second half is your <strong>machine's MAC address</strong>. The upside: naturally ordered (database-index friendly). The downside: privacy — anyone can reverse-engineer your MAC address and generation time from a v1 UUID. Avoid v1 unless you specifically need ordered IDs.
+    </p>
+
+    <h3>UUID v4: The Most Popular Choice</h3>
+    <p>
+      UUID v4 uses 122 random bits (6 bits are reserved for version and variant markers). This is the UUID you see everywhere:
+    </p>
+    <pre><code>a3bb189e-8bf9-4388-b5d3-0af2a0b8e1d1</code></pre>
+    <p>
+      <strong>This is the version our online tool generates.</strong> For the vast majority of use cases, v4 is the right choice — simple, secure, and unique enough.
+    </p>
+
+    <h3>UUID v5: Deterministic UUIDs</h3>
+    <p>
+      UUID v5 uses SHA-1 hashing. You provide a <strong>namespace UUID + a name string</strong>, and it outputs a fixed UUID. Same input always produces the same output. Useful for "generate a stable UUID from an email address or URL" scenarios.
+    </p>
+
+    <h2>UUID Collision Probability: Can They Really Be Unique?</h2>
+    <p>
+      This is the #1 question. UUID v4 has 122 random bits, for a total of <strong>2<sup>122</sup> ≈ 5.3 × 10<sup>36</sup></strong> possible values.
+    </p>
+    <p>
+      Using the birthday paradox, to reach a 50% collision probability you'd need to <strong>generate 1 billion UUIDs per second, continuously, for 85 years</strong>.
+    </p>
+
+    <div class="highlight">
+      <strong>The bottom line:</strong> In any real-world system, the chance of a UUID v4 collision is far lower than the chance of your server being struck by a meteorite. If you actually encounter a collision, check your random number generator for bugs before buying a lottery ticket.
+    </div>
+
+    <h2>When Should You Use UUIDs?</h2>
+    <ul>
+      <li>🗄️ <strong>Distributed database primary keys</strong>: Multiple servers writing simultaneously without waiting for auto-increment locks</li>
+      <li>📁 <strong>Unique filenames</strong>: Rename user uploads with UUIDs to avoid conflicts</li>
+      <li>🔗 <strong>Public-facing IDs</strong>: UUIDs in URLs (<code>/user/550e8400-...</code>) are safer than auto-increment IDs — they don't expose data volume</li>
+      <li>🔑 <strong>Sessions & tokens</strong>: Use UUIDs for session IDs or temporary tokens</li>
+      <li>📧 <strong>Idempotency keys</strong>: Payment and order APIs use UUIDs to prevent duplicate submissions</li>
+      <li>🏷️ <strong>Trace IDs</strong>: Distributed tracing systems typically use UUIDs as trace IDs</li>
+    </ul>
+
+    <h2>UUID vs Auto-Increment ID: How to Choose</h2>
+    <table>
+      <tr><th>Aspect</th><th>UUID</th><th>Auto-Increment ID</th></tr>
+      <tr><td>Global uniqueness</td><td>✅ Guaranteed</td><td>❌ Requires central coordination</td></tr>
+      <tr><td>Distributed-friendly</td><td>✅ Generate anywhere</td><td>❌ Needs locks or sequences</td></tr>
+      <tr><td>Storage size</td><td>16 bytes (128 bits)</td><td>4–8 bytes</td></tr>
+      <tr><td>Index performance</td><td>Worse (random writes)</td><td>Excellent (sequential writes)</td></tr>
+      <tr><td>Info security</td><td>✅ Doesn't reveal count</td><td>❌ Reveals data volume</td></tr>
+      <tr><td>Readability</td><td>Poor (long string)</td><td>Good (short number)</td></tr>
+    </table>
+    <p>
+      <strong>Simple rule:</strong> Monolithic app, performance-sensitive → auto-increment. Distributed system, public-facing IDs → UUID. If you need both, check out <strong>ULID</strong> or <strong>Snowflake IDs</strong> (ordered and globally unique).
+    </p>
+
+    <h2>With or Without Hyphens?</h2>
+    <p>
+      Standard UUID format includes 4 hyphens: <code>550e8400-e29b-41d4-a716-446655440000</code>. In storage, many people strip hyphens to 32 characters: <code>550e8400e29b41d4a716446655440000</code> — saving 4 bytes and simplifying database indexing.
+    </p>
+    <p>
+      Our tool lets you toggle with one click: <strong>check "Keep hyphens" for standard format, uncheck for compact format</strong>.
+    </p>
+
+  </div>
+
+  <div class="cta-box">
+    <p style="margin:0;font-size:1.1rem;">👉 Generate your UUIDs now</p>
+    <p style="color:var(--text-dim);margin:0.5rem 0 0 0;font-size:0.85rem;">One-click UUID v4 generation, batch mode (1/5/10/20), hyphen toggle, one-click copy</p>
+    <a href="../tools/uuid.html" class="btn">🆔 Open UUID Generator</a>
+  </div>
+
+  <div class="guide-content">
+
+    <h2>FAQ</h2>
+    <h3>Q: How are UUID v4 random numbers generated?</h3>
+    <p>In browsers, <code>crypto.getRandomValues()</code> (a cryptographically secure PRNG) is used. In Node.js, it's <code>crypto.randomBytes()</code>. Neither is truly "random," but both are more than secure enough for UUID generation.</p>
+
+    <h3>Q: Why does the third group of a UUID always start with 4?</h3>
+    <p>Because <code>4</code> is the UUID v4 version identifier. Similarly, the first character of the fourth group is always <code>8</code>, <code>9</code>, <code>a</code>, or <code>b</code> — the variant identifier. If your UUID doesn't follow this pattern, it's not a standard v4 UUID.</p>
+
+    <h3>Q: Can UUIDs be used as database primary keys? Is there a performance hit?</h3>
+    <p>Yes, but with trade-offs. UUID randomness causes B+Tree index page splits and fragmentation, hurting write performance compared to auto-increment. If you must use UUIDs as primary keys, consider UUID v1 (time-ordered) or ULID. MySQL 8.0+ offers <code>UUID_TO_BIN()</code> to optimize UUID storage.</p>
+
+    <h3>Q: What's the difference between UUID and GUID?</h3>
+    <p>They're essentially the same thing. GUID (Globally Unique Identifier) is Microsoft's term for UUID. Technically identical — 128 bits, same format, same version definitions.</p>
+
+  </div>
+
+</main>
+
+<footer style="border-top:1px solid var(--border);padding:2rem 1.5rem;text-align:center;color:var(--text-dim);font-size:0.8rem;">
+  <p>ToolForge &copy; 2026 · All computation happens locally. No data is uploaded.</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+</body>
+</html>

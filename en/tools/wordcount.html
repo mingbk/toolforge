@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Word Counter - ToolForge</title>
+<meta name="description" content="Free online word counter. Count characters, words, lines, and paragraphs. Supports Chinese + English mixed text. Real-time updates.">
+<link rel="stylesheet" href="../../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../../index.html">Home</a>
+    <a href="timestamp.html">Timestamp</a>
+    <a href="json.html">JSON</a>
+    <a href="base64.html">Base64</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">Random</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html" class="active">Words</a>
+  </nav>
+  <span class="lang-switch"><a href="../../tools/wordcount.html">中文</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>📝 Word Counter</h1>
+    <p>Paste text to see real-time character count, word count, line count, and paragraph count. Supports Chinese + English mixed text.<br><a href="../guide/wordcount.html" style="font-size:0.85rem;color:var(--text-dim)">📖 How does word counting work? Read the guide →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="Ad · Tool header"></div>
+
+  <!-- Stats cards -->
+  <div class="stats-grid" style="margin-bottom:1.5rem">
+    <div class="stat-card">
+      <div class="stat-value" id="stat-chars">0</div>
+      <div class="stat-label">Total Characters</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-nospace">0</div>
+      <div class="stat-label">Characters (no spaces)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-chinese">0</div>
+      <div class="stat-label">Chinese Characters</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-words">0</div>
+      <div class="stat-label">English Words</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-lines">0</div>
+      <div class="stat-label">Lines</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" id="stat-paras">0</div>
+      <div class="stat-label">Paragraphs</div>
+    </div>
+  </div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>Input Text</label>
+      <div class="btn-group">
+        <button class="btn btn-sm" onclick="pasteFromClipboard()">📋 Paste</button>
+        <button class="btn btn-sm" onclick="clearText()">🗑 Clear</button>
+      </div>
+    </div>
+    <textarea id="text-input" placeholder="Paste or type your text here..." oninput="updateStats()" style="min-height:250px;font-family:var(--font-sans)"></textarea>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="Ad · Tool footer"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — Developer tools, all client-side. No data leaves your browser.</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · Built for speed</p>
+</footer>
+
+<script src="../../js/common.js"></script>
+<script>
+function updateStats() {
+  const text = document.getElementById('text-input').value;
+
+  // Total characters
+  document.getElementById('stat-chars').textContent = text.length;
+
+  // Characters without spaces
+  const noSpace = text.replace(/\s/g, '').length;
+  document.getElementById('stat-nospace').textContent = noSpace;
+
+  // Chinese characters
+  const chinese = (text.match(/[\u4e00-\u9fff\u3400-\u4dbf]/g) || []).length;
+  document.getElementById('stat-chinese').textContent = chinese;
+
+  // English words (splitting on whitespace, excluding pure Chinese segments)
+  const wordCount = text.trim().length > 0
+    ? text.trim().split(/\s+/).filter(w => !/^[\u4e00-\u9fff]+$/.test(w)).length
+    : 0;
+  document.getElementById('stat-words').textContent = wordCount;
+
+  // Lines
+  const lines = text.length > 0 ? text.split('\n').length : 0;
+  document.getElementById('stat-lines').textContent = lines;
+
+  // Paragraphs (separated by double newlines)
+  const paras = text.trim().length > 0
+    ? text.trim().split(/\n\s*\n/).filter(p => p.trim().length > 0).length
+    : 0;
+  document.getElementById('stat-paras').textContent = paras;
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    document.getElementById('text-input').value = text;
+    updateStats();
+    showToast('Pasted from clipboard');
+  } catch {
+    showToast('Cannot access clipboard. Please paste manually.');
+  }
+}
+
+function clearText() {
+  document.getElementById('text-input').value = '';
+  updateStats();
+}
+</script>
+
+</body>
+</html>

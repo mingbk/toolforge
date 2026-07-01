@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON格式化 - ToolForge</title>
+<meta name="description" content="在线JSON格式化、校验和压缩工具。语法高亮，实时验证，一键复制。">
+<link rel="stylesheet" href="../css/style.css">
+<style>
+  .lang-switch { font-size: 0.75rem; margin-left: auto; }
+  .lang-switch a { color: var(--text-dim); }
+</style>
+</head>
+<body>
+
+<header class="site-header">
+  <a href="../index.html" class="logo"><span class="icon">🔧</span> ToolForge</a>
+  <nav>
+    <a href="../index.html">首页</a>
+    <a href="timestamp.html">时间戳</a>
+    <a href="json.html" class="active">JSON</a>
+    <a href="base64.html">编码</a>
+    <a href="uuid.html">UUID</a>
+    <a href="random.html">随机</a>
+    <a href="aes.html">AES</a>
+    <a href="rsa.html">RSA</a>
+    <a href="wordcount.html">字数</a>
+  </nav>
+  <span class="lang-switch"><a href="../en/tools/json.html">EN</a></span>
+</header>
+
+<main>
+
+  <div class="tool-header">
+    <h1>📋 JSON格式化</h1>
+    <p>格式化、压缩和校验JSON。支持语法高亮和一键复制。<br><a href="../guide/json.html" style="font-size:0.85rem;color:var(--text-dim)">📖 使用教程 →</a></p>
+  </div>
+
+  <div class="ad-slot" data-ad-label="广告位 · 工具页顶部"></div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>输入 JSON</label>
+      <div class="btn-group">
+        <button class="btn btn-sm" onclick="formatJSON()">✨ 格式化</button>
+        <button class="btn btn-sm" onclick="minifyJSON()">📦 压缩</button>
+        <button class="btn btn-sm" onclick="clearAll()">🗑 清除</button>
+      </div>
+    </div>
+    <textarea id="json-input" placeholder='粘贴 JSON 到这里，如 {"name":"hello","value":123}' oninput="liveValidate()"></textarea>
+  </div>
+
+  <div class="field">
+    <div class="label-row">
+      <label>输出</label>
+      <button class="btn btn-sm" onclick="copyOutput()">📋 复制结果</button>
+    </div>
+    <div id="json-output" class="json-output" style="min-height:180px;color:var(--text-dim)">
+      <span style="color:var(--text-dim)">结果将显示在这里</span>
+    </div>
+    <div id="json-error" class="error-msg" style="margin-top:0.4rem"></div>
+  </div>
+  <!-- Ad slot: bottom -->
+  <div class="ad-slot" data-ad-label="广告位 · 工具页底部"></div>
+</main>
+
+<footer>
+  <p><strong>ToolForge</strong> — 8 款开发者工具，全部本地运算，数据不出浏览器。</p>
+  <p style="margin-top:0.3rem">© 2026 ToolForge · 为效率而生</p>
+</footer>
+
+<script src="../js/common.js"></script>
+<script>
+let lastParsed = null;
+
+function liveValidate() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  if (!input) {
+    errorEl.textContent = '';
+    return;
+  }
+  try {
+    JSON.parse(input);
+    errorEl.textContent = '';
+  } catch(e) {
+    errorEl.textContent = '⚠ ' + e.message;
+  }
+}
+
+function formatJSON() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  errorEl.textContent = '';
+
+  if (!input) return;
+
+  try {
+    lastParsed = JSON.parse(input);
+    const formatted = JSON.stringify(lastParsed, null, 2);
+    document.getElementById('json-output').innerHTML = highlightJSON(formatted);
+  } catch(e) {
+    errorEl.textContent = '⚠ JSON 格式错误：' + e.message;
+    document.getElementById('json-output').innerHTML =
+      '<span style="color:var(--text-dim)">请修正错误后重新格式化</span>';
+  }
+}
+
+function minifyJSON() {
+  const input = document.getElementById('json-input').value.trim();
+  const errorEl = document.getElementById('json-error');
+  errorEl.textContent = '';
+
+  if (!input) return;
+
+  try {
+    lastParsed = JSON.parse(input);
+    const minified = JSON.stringify(lastParsed);
+    document.getElementById('json-output').textContent = minified;
+  } catch(e) {
+    errorEl.textContent = '⚠ JSON 格式错误：' + e.message;
+  }
+}
+
+function highlightJSON(jsonStr) {
+  const escaped = jsonStr
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+  return escaped.replace(
+    /("(\\u[a-fA-F0-9]{4}|\\[^u]|[^"\\])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    function(match) {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        if (/:$/.test(match)) {
+          cls = 'json-key';
+          match = match.slice(0, -1) + '</span>:';
+        } else {
+          cls = 'json-string';
+        }
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    }
+  );
+}
+
+function clearAll() {
+  document.getElementById('json-input').value = '';
+  document.getElementById('json-output').innerHTML = '<span style="color:var(--text-dim)">结果将显示在这里</span>';
+  document.getElementById('json-error').textContent = '';
+  lastParsed = null;
+}
+
+function copyOutput() {
+  if (!lastParsed) {
+    const text = document.getElementById('json-output').textContent.trim();
+    if (text && text !== '结果将显示在这里') {
+      copyToClipboard(text);
+    }
+    return;
+  }
+  copyToClipboard(JSON.stringify(lastParsed, null, 2));
+}
+</script>
+
+</body>
+</html>
